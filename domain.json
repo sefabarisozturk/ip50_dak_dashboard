@@ -1,0 +1,854 @@
+{
+ "ana_kullanim": {
+  "01_Konut": {
+   "label": "Konut Alanları",
+   "hex": "#8C541A"
+  },
+  "02_Calisma": {
+   "label": "Çalışma Alanları",
+   "hex": "#C53377"
+  },
+  "03_AcikYesil": {
+   "label": "Kentsel Açık ve Yeşil Alanlar",
+   "hex": "#249C22"
+  },
+  "04_SosyalAltyapi": {
+   "label": "Sosyal Altyapı Alanları",
+   "hex": "#73D4FF"
+  },
+  "05_Dogal": {
+   "label": "Doğal Nitelikli Alanlar",
+   "hex": "#B4D79E"
+  },
+  "06_UlasimAltyapi": {
+   "label": "Ulaşım ve Altyapı",
+   "hex": "#B2B2B2"
+  },
+  "07_Su": {
+   "label": "Su Yüzeyleri ve Sulak Alanlar",
+   "hex": "#73DFEB"
+  },
+  "08_Diger": {
+   "label": "Diğer Alanlar",
+   "hex": "#D9E2D4"
+  }
+ },
+ "orta_kullanim": {
+  "1": {
+   "label": "Konut Alanları",
+   "hex": "#8C541A"
+  },
+  "2": {
+   "label": "Hizmet Alanları",
+   "hex": "#E00021"
+  },
+  "3": {
+   "label": "Sanayi-Lojistik Alanları",
+   "hex": "#AA66CD"
+  },
+  "4": {
+   "label": "Tarım ve Madencilik Alanları",
+   "hex": "#553367"
+  },
+  "5": {
+   "label": "Askeri Alanlar",
+   "hex": "#A8A800"
+  },
+  "6": {
+   "label": "Resmi Kurumlar",
+   "hex": "#6699CD"
+  },
+  "7": {
+   "label": "Kentsel Açık Alanlar",
+   "hex": "#249C22"
+  },
+  "8": {
+   "label": "Aktif Yeşil Alanlar",
+   "hex": "#249C22"
+  },
+  "9": {
+   "label": "Pasif Yeşil Alanlar",
+   "hex": "#63BA52"
+  },
+  "10": {
+   "label": "Eğitim Tesisi Alanları",
+   "hex": "#008FFF"
+  },
+  "11": {
+   "label": "İbadet Alanları",
+   "hex": "#73D4FF"
+  },
+  "12": {
+   "label": "Sosyo-Kültürel Tesis Alanları",
+   "hex": "#73D4FF"
+  },
+  "13": {
+   "label": "Sağlık Tesisi Alanları",
+   "hex": "#00A9E6"
+  },
+  "14": {
+   "label": "Spor Alanları",
+   "hex": "#89CD66"
+  },
+  "15": {
+   "label": "Orman Alanları",
+   "hex": "#228B22"
+  },
+  "16": {
+   "label": "Tarım Alanları",
+   "hex": "#E9FABE"
+  },
+  "17": {
+   "label": "Kıyı Alanları",
+   "hex": "#D9CCC1"
+  },
+  "18": {
+   "label": "Karayolu Ulaşımı",
+   "hex": "#B2B2B2"
+  },
+  "19": {
+   "label": "Denizyolu Ulaşımı",
+   "hex": "#CCCCCC"
+  },
+  "20": {
+   "label": "Raylı Sistemler",
+   "hex": "#F57A7A"
+  },
+  "21": {
+   "label": "Havayolu Ulaşımı",
+   "hex": "#B2B2B2"
+  },
+  "23": {
+   "label": "Kıyı Yapıları",
+   "hex": "#ABABAB"
+  },
+  "24": {
+   "label": "Enerji Altyapısı",
+   "hex": "#ABABC8"
+  },
+  "25": {
+   "label": "Su Altyapısı",
+   "hex": "#B2B2B2"
+  },
+  "26": {
+   "label": "Atık Yönetimi",
+   "hex": "#B2B2B2"
+  },
+  "27": {
+   "label": "Su Yüzeyleri",
+   "hex": "#73DFEB"
+  },
+  "28": {
+   "label": "Diğer Alanlar",
+   "hex": "#D9E2D4"
+  }
+ },
+ "alt_kullanim": {
+  "1": {
+   "label": "Kentsel Konut Alanı",
+   "hex": "#8C541A"
+  },
+  "2": {
+   "label": "Kırsal Konut Alanı",
+   "hex": "#642C06"
+  },
+  "3": {
+   "label": "Ticaret Alanı",
+   "hex": "#E00021"
+  },
+  "4": {
+   "label": "Turizm Alanı (Konaklama)",
+   "hex": "#FF7400"
+  },
+  "5": {
+   "label": "Günübirlik Tesis Alanı",
+   "hex": "#FFAD00"
+  },
+  "6": {
+   "label": "Pazar Alanı",
+   "hex": "#E00021"
+  },
+  "7": {
+   "label": "Akaryakıt ve Servis İstasyonu Alanı",
+   "hex": "#FF3800"
+  },
+  "8": {
+   "label": "Ticaret-Konut Alanı",
+   "hex": "#E3BA45"
+  },
+  "9": {
+   "label": "Ticaret-Turizm Alanı",
+   "hex": "#FF7400"
+  },
+  "10": {
+   "label": "Ticaret-Turizm-Konut Alanı",
+   "hex": "#FF7400"
+  },
+  "11": {
+   "label": "Sanayi Alanı",
+   "hex": "#AA66CD"
+  },
+  "12": {
+   "label": "Depolama ve Lojistik Tesis Alanı",
+   "hex": "#C29ED7"
+  },
+  "13": {
+   "label": "Organize Sanayi Bölgesi",
+   "hex": "#AA66CD"
+  },
+  "14": {
+   "label": "Küçük Sanayi Alanı",
+   "hex": "#AA66CD"
+  },
+  "15": {
+   "label": "Teknoloji Geliştirme Bölgesi",
+   "hex": "#6699CD"
+  },
+  "16": {
+   "label": "Endüstri Bölgesi",
+   "hex": "#AA66CD"
+  },
+  "17": {
+   "label": "Serbest Bölge",
+   "hex": "#6699CD"
+  },
+  "18": {
+   "label": "Tersane",
+   "hex": "#828282"
+  },
+  "19": {
+   "label": "Sanayi-Konut Alanı",
+   "hex": "#9B5D74"
+  },
+  "20": {
+   "label": "Sanayi-Ticaret Alanı",
+   "hex": "#C53377"
+  },
+  "21": {
+   "label": "Sanayi-Ticaret-Konut Alanı",
+   "hex": "#C79089"
+  },
+  "22": {
+   "label": "Tarım ve Hayvancılık Tesis Alanı",
+   "hex": "#E9FABE"
+  },
+  "23": {
+   "label": "Maden Sahası",
+   "hex": "#553367"
+  },
+  "24": {
+   "label": "Hafriyat Alanı",
+   "hex": "#83738C"
+  },
+  "25": {
+   "label": "Askeri Alan",
+   "hex": "#A8A800"
+  },
+  "26": {
+   "label": "Kamu Kurumu (Yerel İdare)",
+   "hex": "#6699CD"
+  },
+  "27": {
+   "label": "Kamu Kurumu (Merkezi İdare)",
+   "hex": "#6699CD"
+  },
+  "28": {
+   "label": "Meydan",
+   "hex": "#FFE5CF"
+  },
+  "29": {
+   "label": "Yaya Bölgesi",
+   "hex": "#FFE5CF"
+  },
+  "30": {
+   "label": "Park",
+   "hex": "#249C22"
+  },
+  "31": {
+   "label": "Kent Parkı",
+   "hex": "#249C22"
+  },
+  "32": {
+   "label": "Panayır-Festival Alanı",
+   "hex": "#249C22"
+  },
+  "33": {
+   "label": "Hayvanat Bahçesi",
+   "hex": "#249C22"
+  },
+  "35": {
+   "label": "Refüj/Şev-Yamaç/Çayır",
+   "hex": "#63BA52"
+  },
+  "36": {
+   "label": "Ağaçlık Alan",
+   "hex": "#63BA52"
+  },
+  "37": {
+   "label": "Mezarlık Alanı",
+   "hex": "#63BA52"
+  },
+  "38": {
+   "label": "Anaokulu Alanı",
+   "hex": "#008FFF"
+  },
+  "39": {
+   "label": "İlkokul Alanı",
+   "hex": "#008FFF"
+  },
+  "40": {
+   "label": "Ortaokul Alanı",
+   "hex": "#008FFF"
+  },
+  "41": {
+   "label": "İlkokul-Ortaokul Alanı",
+   "hex": "#008FFF"
+  },
+  "42": {
+   "label": "Lise Alanı",
+   "hex": "#008FFF"
+  },
+  "43": {
+   "label": "Mesleki ve Teknik Lise Alanı",
+   "hex": "#008FFF"
+  },
+  "44": {
+   "label": "Üniversite Alanı",
+   "hex": "#008FFF"
+  },
+  "45": {
+   "label": "Özel Eğitim ve Rehabilitasyon Tesisi Alanı",
+   "hex": "#008FFF"
+  },
+  "46": {
+   "label": "Hayat Boyu Öğrenme Merkezi",
+   "hex": "#008FFF"
+  },
+  "47": {
+   "label": "Halk Eğitim Merkezi",
+   "hex": "#008FFF"
+  },
+  "48": {
+   "label": "Cami/Mescit Alanı",
+   "hex": "#73D4FF"
+  },
+  "49": {
+   "label": "Cemevi",
+   "hex": "#73D4FF"
+  },
+  "50": {
+   "label": "Kilise/Şapel Alanı",
+   "hex": "#73D4FF"
+  },
+  "51": {
+   "label": "Sinagog Alanı",
+   "hex": "#73D4FF"
+  },
+  "52": {
+   "label": "Sosyal Tesis Alanı",
+   "hex": "#73D4FF"
+  },
+  "53": {
+   "label": "Kültürel Tesis Alanı",
+   "hex": "#73D4FF"
+  },
+  "54": {
+   "label": "Fuar-Kongre Alanı",
+   "hex": "#73D4FF"
+  },
+  "55": {
+   "label": "Yaşlı Bakımevi Alanı",
+   "hex": "#73D4FF"
+  },
+  "56": {
+   "label": "Öğrenci Yurdu Alanı",
+   "hex": "#73D4FF"
+  },
+  "57": {
+   "label": "Kreş, Gündüz Bakımevi",
+   "hex": "#73D4FF"
+  },
+  "58": {
+   "label": "Çocuk Yetiştirme Yurdu",
+   "hex": "#73D4FF"
+  },
+  "59": {
+   "label": "Birinci Basamak Sağlık Tesisi Alanı",
+   "hex": "#00A9E6"
+  },
+  "60": {
+   "label": "İkinci Basamak Sağlık Tesisi Alanı",
+   "hex": "#00A9E6"
+  },
+  "61": {
+   "label": "Üçüncü Basamak Sağlık Tesisi Alanı",
+   "hex": "#00A9E6"
+  },
+  "62": {
+   "label": "Açık Spor Alanı",
+   "hex": "#89CD66"
+  },
+  "63": {
+   "label": "Kapalı Spor Alanı",
+   "hex": "#89CD66"
+  },
+  "64": {
+   "label": "Karma Spor Kompleksi",
+   "hex": "#89CD66"
+  },
+  "65": {
+   "label": "Kentsel ve Bölgesel Spor Alanı",
+   "hex": "#249C22"
+  },
+  "67": {
+   "label": "Kent Ormanı",
+   "hex": "#63BA52"
+  },
+  "68": {
+   "label": "Tabiat Parkı",
+   "hex": "#249C22"
+  },
+  "69": {
+   "label": "Orman Parkı",
+   "hex": "#63BA52"
+  },
+  "70": {
+   "label": "Arboretum",
+   "hex": "#249C22"
+  },
+  "71": {
+   "label": "Orman Alanı",
+   "hex": "#1A681A"
+  },
+  "72": {
+   "label": "Makilik-Fundalık Alan",
+   "hex": "#B4D79E"
+  },
+  "73": {
+   "label": "Tarım Alanı",
+   "hex": "#E9FABE"
+  },
+  "74": {
+   "label": "Sera",
+   "hex": "#E9FABE"
+  },
+  "75": {
+   "label": "Kentiçi Tarım Alanı",
+   "hex": "#E9FABE"
+  },
+  "76": {
+   "label": "Mera Alanı",
+   "hex": "#70B800"
+  },
+  "77": {
+   "label": "Hayvancılık Alanı",
+   "hex": "#E9FABE"
+  },
+  "78": {
+   "label": "Kıyı-Kumul-Kayalık Alan",
+   "hex": "#D9CCC1"
+  },
+  "79": {
+   "label": "Kumsal-Plaj Alanı",
+   "hex": "#FFE5CF"
+  },
+  "80": {
+   "label": "Açık Otopark",
+   "hex": "#B2B2B2"
+  },
+  "81": {
+   "label": "Kapalı Otopark",
+   "hex": "#B2B2B2"
+  },
+  "82": {
+   "label": "Tır, Kamyon, Makine Parkı ve Garaj Alanı",
+   "hex": "#FF3800"
+  },
+  "83": {
+   "label": "Terminal-Otogar",
+   "hex": "#FF3800"
+  },
+  "84": {
+   "label": "Toplu Taşıma Garajı/Ana Durak",
+   "hex": "#B2B2B2"
+  },
+  "85": {
+   "label": "İskele/Rıhtım",
+   "hex": "#CCCCCC"
+  },
+  "86": {
+   "label": "Liman",
+   "hex": "#CCCCCC"
+  },
+  "87": {
+   "label": "Ana İstasyon (Gar)",
+   "hex": "#B2B2B2"
+  },
+  "88": {
+   "label": "Ara İstasyon",
+   "hex": "#B2B2B2"
+  },
+  "89": {
+   "label": "Triyaj Alanı ",
+   "hex": "#B2B2B2"
+  },
+  "90": {
+   "label": "Demiryolu Alanı ",
+   "hex": "#F57A7A"
+  },
+  "91": {
+   "label": "Havalimanı/Havaalanı",
+   "hex": "#B2B2B2"
+  },
+  "92": {
+   "label": "Heliport",
+   "hex": "#B2B2B2"
+  },
+  "93": {
+   "label": "Aktarma Alanı",
+   "hex": "#B2B2B2"
+  },
+  "94": {
+   "label": "Yat Limanı (Marina)",
+   "hex": "#828282"
+  },
+  "95": {
+   "label": "Tekne Çekek Yeri/Balıkçı Barınağı",
+   "hex": "#CCCCCC"
+  },
+  "96": {
+   "label": "Kıyı Koruma Yapısı ",
+   "hex": "#CCCCCC"
+  },
+  "97": {
+   "label": "Güneş Enerjisi Santrali",
+   "hex": "#ABABC8"
+  },
+  "98": {
+   "label": "Rüzgar Enerjisi Santrali",
+   "hex": "#ABABC8"
+  },
+  "99": {
+   "label": "Doğalgaz İletim/Dağıtım Tesisi Alanı",
+   "hex": "#C29ED7"
+  },
+  "100": {
+   "label": "Hidro Elektrik Santral Alanı",
+   "hex": "#ABABC8"
+  },
+  "101": {
+   "label": "Jeotermal Tesis Alanı",
+   "hex": "#ABABC8"
+  },
+  "102": {
+   "label": "Akaryakıt Ürünleri Depolama Alanı",
+   "hex": "#C29ED7"
+  },
+  "103": {
+   "label": "Yanıcı Parlayıcı ve Patlayıcı Maddeler Üretim Ve Depo Alanı",
+   "hex": "#C29ED7"
+  },
+  "104": {
+   "label": "Elektronik Haberleşme Altyapı Alanı",
+   "hex": "#B2B2B2"
+  },
+  "105": {
+   "label": "Enerji Üretim/Depolama Alanı",
+   "hex": "#ABABC8"
+  },
+  "106": {
+   "label": "Trafo Alanı/İndirici Merkezler",
+   "hex": "#B2B2B2"
+  },
+  "107": {
+   "label": "Regülatör Alanı",
+   "hex": "#C29ED7"
+  },
+  "108": {
+   "label": "Atıksu Tesisleri Alanı (Arıtma-Terfi Merkezi)",
+   "hex": "#B2B2B2"
+  },
+  "109": {
+   "label": "İçme Suyu Tesisleri Alanı (Depolama-Arıtma-Terfi Merkezi)",
+   "hex": "#B2B2B2"
+  },
+  "110": {
+   "label": "Su Kaynakları Toplama Yeri (Kaptaj Alanı)",
+   "hex": "#B2B2B2"
+  },
+  "111": {
+   "label": "Katı Atık Tesisleri Alanı",
+   "hex": "#B2B2B2"
+  },
+  "112": {
+   "label": "Tehlikeli Atık Tesisleri Alanı",
+   "hex": "#B2B2B2"
+  },
+  "113": {
+   "label": "Geri Dönüşüm Tesisi",
+   "hex": "#B2B2B2"
+  },
+  "114": {
+   "label": "Deniz",
+   "hex": "#73DFEB"
+  },
+  "115": {
+   "label": "Göl",
+   "hex": "#73DFEB"
+  },
+  "116": {
+   "label": "Sulak Alan",
+   "hex": "#73DFEB"
+  },
+  "117": {
+   "label": "Akarsu/Dere",
+   "hex": "#73DFEB"
+  },
+  "118": {
+   "label": "Baraj",
+   "hex": "#B2B2B2"
+  },
+  "119": {
+   "label": "İnşaatı Devam Eden Alan",
+   "hex": "#444444"
+  },
+  "120": {
+   "label": "Yapılaşmamış Alan",
+   "hex": "#D9E2D4"
+  },
+  "121": {
+   "label": "Tarihi Surlar",
+   "hex": "#877441"
+  },
+  "122": {
+   "label": "Süreci ve Kullanımı Belirsiz Alan",
+   "hex": "#D7C29E"
+  },
+  "123": {
+   "label": "Meydan-Yeraltı Otopark Alanı",
+   "hex": "#FFE5CF"
+  },
+  "124": {
+   "label": "Park-Yeraltı Otopark Alanı",
+   "hex": "#249C22"
+  },
+  "125": {
+   "label": "İlkokul-Ortaokul-Lise Alanı",
+   "hex": "#008FFF"
+  },
+  "126": {
+   "label": "Özel Öğretim Kurumu",
+   "hex": "#008FFF"
+  },
+  "127": {
+   "label": "Millet Bahçesi",
+   "hex": "#249C22"
+  },
+  "128": {
+   "label": "Fidanlık",
+   "hex": "#63BA52"
+  },
+  "129": {
+   "label": "Mesleki ve Toplumsal Temsil Alanı",
+   "hex": "#73D4FF"
+  },
+  "130": {
+   "label": "Pazar Alanı-Otopark Alanı",
+   "hex": "#E00021"
+  },
+  "131": {
+   "label": "Rekreasyon Alanı",
+   "hex": "#249C22"
+  },
+  "132": {
+   "label": "Metrobüs Alanı",
+   "hex": "#F57A7A"
+  },
+  "133": {
+   "label": "Sokak Hayvanları Barınağı Alanı",
+   "hex": "#9ACF19"
+  }
+ },
+ "nacekodu": {
+  "1": {
+   "label": "A - Tarım, Ormancılık ve Balıkçılık",
+   "hex": "#6FA83C"
+  },
+  "2": {
+   "label": "B - Madencilik ve Taş Ocakçılığı",
+   "hex": "#5E3B73"
+  },
+  "3": {
+   "label": "C - İmalat",
+   "hex": "#AA66CD"
+  },
+  "4": {
+   "label": "D - Elektrik, Gaz, Buhar ve İklimlendirme Üretimi ve Dağıtımı",
+   "hex": "#F2B705"
+  },
+  "5": {
+   "label": "E - Su Temini; Kanalizasyon, Atık Yönetimi ve İyileştirme Faaliyetleri",
+   "hex": "#149C9C"
+  },
+  "6": {
+   "label": "F - İnşaat",
+   "hex": "#ED7D31"
+  },
+  "7": {
+   "label": "G - Toptan ve Perakende Ticaret",
+   "hex": "#E00021"
+  },
+  "8": {
+   "label": "H - Ulaştırma ve Depolama",
+   "hex": "#34577C"
+  },
+  "9": {
+   "label": "I - Konaklama ve Yiyecek Hizmeti Faaliyetleri",
+   "hex": "#C9466B"
+  },
+  "10": {
+   "label": "J - Yayımcılık, Radyo ve Televizyon Yayıncılığı İle İçerik Üretim ve Dağıtım Faaliyetleri",
+   "hex": "#B83DA0"
+  },
+  "11": {
+   "label": "K - Telekomünikasyon, Programlama, Danışmanlık, Bilişim Altyapısı vb. Bilgi Hizmeti Faaliyetleri",
+   "hex": "#1565C0"
+  },
+  "12": {
+   "label": "L - Finans Ve Sigorta Faaliyetleri",
+   "hex": "#0E8A6E"
+  },
+  "13": {
+   "label": "M - Gayrimenkul Faaliyetleri",
+   "hex": "#B5894E"
+  },
+  "14": {
+   "label": "N - Mesleki, Bilimsel ve Teknik Faaliyetler",
+   "hex": "#6E5BD0"
+  },
+  "15": {
+   "label": "O - İdari ve Destek Hizmet Faaliyetleri",
+   "hex": "#A6A096"
+  },
+  "16": {
+   "label": "P - Kamu Yönetimi ve Savunma; Zorunlu Sosyal Güvenlik",
+   "hex": "#4472C4"
+  },
+  "17": {
+   "label": "Q - Eğitim",
+   "hex": "#008FFF"
+  },
+  "18": {
+   "label": "R - İnsan Sağlığı ve Sosyal Hizmet Faaliyetleri",
+   "hex": "#00A9E6"
+  },
+  "19": {
+   "label": "S - Sanat, Spor ve Eğlence (Rekreasyon) Faaliyetleri",
+   "hex": "#8DC63F"
+  },
+  "20": {
+   "label": "T - Diğer Hizmet Faaliyetleri",
+   "hex": "#808080"
+  },
+  "21": {
+   "label": "U - Hanehalklarının İşveren ve Kendi Kullanımlarına Yönelik Mal ve Hizmet Üretim Faaliyetleri",
+   "hex": "#8C541A"
+  },
+  "22": {
+   "label": "V - Uluslararası Örgütler ve Temsilciliklerinin Faaliyetleri",
+   "hex": "#7FB1E8"
+  },
+  "23": {
+   "label": "Y - Kendi Adına Menkul Sermaye İradı Faaliyetleri (Temettü, Banka Faizi, İştirak Kazançları vb.)",
+   "hex": "#C9A227"
+  }
+ },
+ "detay_ticaret": {
+  "1": {
+   "label": "Ofis",
+   "hex": "#D85A8A"
+  },
+  "2": {
+   "label": "Finans",
+   "hex": "#A83D6B"
+  },
+  "3": {
+   "label": "Lojistik",
+   "hex": "#B58FD1"
+  },
+  "4": {
+   "label": "Temel Perakende",
+   "hex": "#E00021"
+  },
+  "5": {
+   "label": "Toptan Ticaret",
+   "hex": "#7E52A8"
+  },
+  "6": {
+   "label": "AVM",
+   "hex": "#C20019"
+  },
+  "7": {
+   "label": "Açık Pazar Alanı",
+   "hex": "#F2901E"
+  },
+  "8": {
+   "label": "Kapalı Pazar Alanı",
+   "hex": "#C96716"
+  },
+  "9": {
+   "label": "Toplu İşyeri",
+   "hex": "#6F5C6B"
+  }
+ },
+ "detay_konut": {
+  "1": {
+   "label": "Tekil Apartman",
+   "hex": "#F2D98A"
+  },
+  "2": {
+   "label": "Apartman (Site)",
+   "hex": "#E0BC55"
+  },
+  "3": {
+   "label": "Rezidans",
+   "hex": "#E08A2E"
+  },
+  "4": {
+   "label": "Rezidans (Site)",
+   "hex": "#B86B1C"
+  },
+  "5": {
+   "label": "Villa/Müstakil",
+   "hex": "#8C541A"
+  },
+  "6": {
+   "label": "Villa/Müstakil (Site)",
+   "hex": "#5E3611"
+  },
+  "7": {
+   "label": "Düzensiz Gelişmiş",
+   "hex": "#9B8AA8"
+  }
+ },
+ "detay_resmi": {
+  "1": {
+   "label": "İdari Tesis Alanı",
+   "hex": "#6699CD"
+  },
+  "2": {
+   "label": "Kamu Hizmet Alanı",
+   "hex": "#8AB6E0"
+  }
+ },
+ "detay_sosyalaltyapi": {
+  "1": {
+   "label": "Kamu",
+   "hex": "#2F9BD6"
+  },
+  "2": {
+   "label": "Özel",
+   "hex": "#88C9EC"
+  }
+ }
+}
