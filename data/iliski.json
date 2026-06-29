@@ -1,0 +1,76 @@
+{
+ "Genel Bakış": [
+  "İstanbul Plan 2050 (Tüm Gruplar)"
+ ],
+ "Konut Alanları": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "Ekonomik Yapı",
+  "İstanbul Mirası",
+  "Konut ve Barınma",
+  "Mekansal Yapı",
+  "Teknik Altyapı",
+  "Toplumsal ve Kültürel Yapı",
+  "Ulaşım"
+ ],
+ "Çalışma Alanları": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "Ekonomik Yapı",
+  "İstanbul Mirası",
+  "Lojistik",
+  "Mekansal Yapı",
+  "Teknik Altyapı",
+  "Ulaşım"
+ ],
+ "Açık ve Yeşil Alanlar": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "İklim, Ekolojik Yapı ve Çevresel Değerler",
+  "İstanbul Mirası",
+  "Kıyı Alanları",
+  "Konut ve Barınma",
+  "Mekansal Yapı",
+  "Toplumsal ve Kültürel Yapı"
+ ],
+ "Sosyal Altyapı": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "İstanbul Mirası",
+  "Konut ve Barınma",
+  "Mekansal Yapı",
+  "Toplumsal ve Kültürel Yapı"
+ ],
+ "Doğal Nitelikli Alanlar": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "Ekonomik Yapı",
+  "İklim, Ekolojik Yapı ve Çevresel Değerler",
+  "Kıyı Alanları",
+  "Mekansal Yapı",
+  "Teknik Altyapı"
+ ],
+ "Ulaşım ve Altyapı": [
+  "Stratejik Çerçeve",
+  "Afet, Risk Yönetimi ve Kentsel Dönüşüm",
+  "Ekonomik Yapı",
+  "Kıyı Alanları",
+  "Konut ve Barınma",
+  "Lojistik",
+  "Mekansal Yapı",
+  "Teknik Altyapı",
+  "Ulaşım"
+ ],
+ "Su Yüzeyleri": [
+  "Stratejik Çerçeve",
+  "İklim, Ekolojik Yapı ve Çevresel Değerler",
+  "İstanbul Mirası",
+  "Kıyı Alanları",
+  "Mekansal Yapı",
+  "Teknik Altyapı"
+ ],
+ "Diğer Alanlar": [
+  "Mekansal Yapı",
+  "Teknik Altyapı"
+ ]
+}
