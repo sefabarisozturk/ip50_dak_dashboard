@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <!-- PMTiles protokolü — hedef mimaride 623MB veri için; geçici JSON modunda atıl bekler. -->
 <script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
-<!-- ECharts — donut + sütun grafikleri (brief: drilldown ve çapraz filtre için). -->
+<!-- ECharts — iki donut grafik (brief: drilldown ve çapraz filtre için). -->
 <script src="https://unpkg.com/echarts@5.5.1/dist/echarts.min.js"></script>
 
 
@@ -91,18 +91,18 @@ button { font-family: inherit; cursor: pointer; }
 }
 .brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-mark {
-  width: 36px; height: 36px; flex: none;
+  height: 36px; width: auto; max-width: 220px; flex: none;
   display: grid; place-items: center; overflow: hidden;
 }
-.brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.brand-mark img { height: 100%; width: auto; max-width: 100%; object-fit: contain; display: block; }
 .brand-text { display: flex; flex-direction: column; min-width: 0; }
 .brand-title {
   font-weight: 700; font-size: 14px; letter-spacing: -.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .brand-sub {
-  font-size: 11px; color: var(--ink-3); font-weight: 500;
-  letter-spacing: .04em; text-transform: uppercase;
+  font-weight: 700; font-size: 14px; letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .header-spacer { flex: 1; }
 .header-actions { display: flex; align-items: center; gap: 4px; }
@@ -323,6 +323,8 @@ button { font-family: inherit; cursor: pointer; }
 .maplibregl-ctrl-group button + button { border-top: 1px solid var(--line-2) !important; }
 .maplibregl-ctrl-group button:hover { background: var(--bg) !important; color: var(--brand); }
 .maplibregl-ctrl-group button:disabled { opacity:.4; }
+/* Açık/kapalı durumlu özel butonlar (ör. uydu altlık) — basılıyken vurgulu. */
+.dak-ctrl button.is-active { background: var(--brand-soft) !important; color: var(--brand-strong) !important; }
 
 /* ---- Tutarlı minimal ikon seti (stroke tabanlı, Inter/Swiss diliyle uyumlu) ----
    MapLibre'nin varsayılan ikonları gizlenir; her butona currentColor maske ile
@@ -492,8 +494,8 @@ button { font-family: inherit; cursor: pointer; }
   <div class="brand-lockup">
     <div class="brand-mark" id="brandMark"></div>
     <div class="brand-text">
-      <span class="brand-title">İstanbul Plan 2050</span>
-      <span class="brand-sub">Detaylı Arazi Kullanımı</span>
+      <span class="brand-title">Arazi Kullanım</span>
+      <span class="brand-sub">Veri Tabanı</span>
     </div>
   </div>
   <div class="header-spacer"></div>
@@ -750,6 +752,12 @@ const CONFIG = {
     dark:  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>'
   },
+  // Uydu görüntüsü altlık (Esri World Imagery) — harita kontrolünden açılır/kapanır.
+  satellite: {
+    tiles: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Esri, Maxar, Earthstar Geographics, GIS Topluluğu',
+    maxzoom: 19
+  },
 
   istanbul: { center: [28.97, 41.05], zoom: 9 }
 };
@@ -975,6 +983,15 @@ function syncBasemapTheme() {
   try { map.getSource('basemap').setTiles(basemapTilesForTheme()); } catch(e){}
 }
 
+/* Plan altlığı ↔ uydu görüntüsü geçişi (SatelliteControl tarafından tetiklenir). */
+let satelliteOn = false;
+function setSatellite(on) {
+  satelliteOn = on;
+  if (!map || !map.getLayer('basemap') || !map.getLayer('basemap-sat')) return;
+  map.setLayoutProperty('basemap',     'visibility', on ? 'none'    : 'visible');
+  map.setLayoutProperty('basemap-sat', 'visibility', on ? 'visible' : 'none');
+}
+
 function baseStyle() {
   return {
     version: 8,
@@ -983,9 +1000,16 @@ function baseStyle() {
       basemap: {
         type: 'raster', tiles: basemapTilesForTheme(), tileSize: 256,
         attribution: CONFIG.basemap.attribution
+      },
+      'basemap-sat': {
+        type: 'raster', tiles: [CONFIG.satellite.tiles], tileSize: 256,
+        maxzoom: CONFIG.satellite.maxzoom, attribution: CONFIG.satellite.attribution
       }
     },
-    layers: [{ id: 'basemap', type: 'raster', source: 'basemap' }]
+    layers: [
+      { id: 'basemap', type: 'raster', source: 'basemap' },
+      { id: 'basemap-sat', type: 'raster', source: 'basemap-sat', layout: { visibility: 'none' } }
+    ]
   };
 }
 
@@ -1083,6 +1107,31 @@ class FitProvinceControl {
     b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/></svg>`;
     b.addEventListener('click', () => {
       if (ISTANBUL_BOUNDS) this._map.fitBounds(ISTANBUL_BOUNDS, { padding: 30, duration: 600 });
+    });
+    this._c.appendChild(b);
+    return this._c;
+  }
+  onRemove() { this._c.parentNode && this._c.parentNode.removeChild(this._c); }
+}
+
+/* Uydu görüntüsü altlığı aç/kapa — basılı durumda (is-active) Esri World Imagery
+   gösterilir, kapalıyken CartoDB plan altlığına döner (syncBasemapTheme ile uyumlu). */
+class SatelliteControl {
+  onAdd(m) {
+    this._map = m;
+    this._c = document.createElement('div');
+    this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.title = 'Uydu görüntüsü altlığı';
+    b.setAttribute('aria-label','Uydu görüntüsü altlığı');
+    b.setAttribute('aria-pressed','false');
+    // Katman/uydu ikonu — diğer DAK kontrolleriyle aynı stroke dili.
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M12 2 3 7l9 5 9-5-9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg>`;
+    b.addEventListener('click', () => {
+      setSatellite(!satelliteOn);
+      b.classList.toggle('is-active', satelliteOn);
+      b.setAttribute('aria-pressed', String(satelliteOn));
     });
     this._c.appendChild(b);
     return this._c;
@@ -1310,6 +1359,8 @@ function initMap() {
   map.addControl(new maplibregl.NavigationControl({ showCompass:true, visualizePitch:true }), 'top-right');
   // İl bütünü extent'ine getir (özel buton) — tam ekrandan önce.
   map.addControl(new FitProvinceControl(), 'top-right');
+  // Uydu görüntüsü altlığı aç/kapa.
+  map.addControl(new SatelliteControl(), 'top-right');
   // Ekran görüntüsü (harita kanvası → PNG).
   map.addControl(new SnapshotControl(), 'top-right');
   // Tam ekran.
@@ -1735,7 +1786,7 @@ function legendTitleFor(layerKey) {
 }
 
 /* =========================================================================
-   GRAFİKLER (ECharts) — panel başına donut + sütun. Veri: yüklenen parseller
+   GRAFİKLER (ECharts) — panel başına iki donut. Veri: yüklenen parseller
    (DAK_FC) üzerinden alan (Shape_Area) bazlı agregasyon. PMTiles + dak_ozet.json
    geldiğinde kaynak özet JSON'a çevrilecek (aggregateField'ı besleyen tek nokta).
    Renk: panel-renk kuralı (alt'ta panel override). Filtreye duyarlı (panel+ilçe).
@@ -1745,7 +1796,7 @@ let donutChart = null, barChart = null;
 let donutDrill = [];               // [] ana, [anaCode] orta, [anaCode,ortaCode] alt (Genel Bakış)
 const CHART_TOPN = 10;
 
-/* Panel → donut + sütun alan/etiket tanımları (şartname matrisi). */
+/* Panel → iki donut alan/etiket tanımları (şartname matrisi). */
 const CHART_CONFIG = {
   "Genel Bakış":                   { donut:{field:'ana_kullanim',dom:'ana',drill:true}, bar:{field:'kent_kir',title:'Kentsel / Kırsal Dağılım'} },
   "Konut Alanları":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_konut',dom:'detay_konut',title:'Konut Detayı Dağılımı'} },
@@ -1896,33 +1947,32 @@ function renderDonut(dcfg) {
   }, true);
 }
 
-/* ---- SÜTUN (yatay bar, top-N) ---- */
+/* ---- İKİNCİ DONUT (eski sütun grafiğin yerine, top-N) ---- */
 function renderBar(bcfg) {
   document.getElementById('barTitle').textContent = bcfg.title;
   const feats = filteredFeatures();
   let items = aggregateField(feats, bcfg.field, { dom: bcfg.dom });
+  const total = items.reduce((s,i)=>s+i.value,0);
   items = topNWithOther(items, CHART_TOPN);
 
   if (!items.length) { barChart.clear(); showChartEmpty('barChart'); return; }
   hideChartEmpty('barChart');
 
-  // Yatay bar: en büyük üstte okunur → ters çevir.
-  const data = items.slice().reverse();
   const tc = chartTextColors();
   barChart.setOption({
-    grid: { left:6, right:14, top:10, bottom:6, containLabel:true },
-    tooltip: { trigger:'axis', axisPointer:{type:'shadow'},
-      formatter: (ps) => { const d=ps[0]; return `${d.name}<br/><b>${fmtArea(d.value)}</b>`; } },
-    xAxis: { type:'value', axisLabel:{ color:tc.faint, fontSize:10,
-              formatter:(v)=> { const ha=v/1e4; return ha>=1000 ? (ha/1000).toFixed(0)+'B ha' : Math.round(ha)+' ha'; } },
-             splitLine:{ lineStyle:{ color:tc.line } }, axisLine:{show:false}, axisTick:{show:false} },
-    yAxis: { type:'category', data: data.map(d=>d.label),
-             axisLabel:{ color:tc.text, fontSize:11, fontFamily:'Inter',
-                         formatter:(v)=> v.length>16 ? v.slice(0,15)+'…' : v },
-             axisLine:{ lineStyle:{color:tc.line} }, axisTick:{show:false} },
-    series: [{ type:'bar', barMaxWidth:18,
-      data: data.map(d=>({ value:d.value, itemStyle:{ color:d.hex, borderRadius:[0,2,2,0] } })),
-    }]
+    tooltip: { trigger:'item',
+      formatter: (p) => `${p.data.label}<br/><b>${fmtArea(p.data.value)}</b> · %${p.percent}` },
+    series: [{
+      type:'pie', radius:['52%','78%'], center:['50%','50%'],
+      avoidLabelOverlap:true, minAngle:3,
+      itemStyle:{ borderColor: cssVar('--surface')||'#fff', borderWidth:1.5 },
+      label:{ show:false }, labelLine:{ show:false },
+      data: items.map(it => ({ value:it.value, name:it.label, code:it.code,
+                               label:it.label, itemStyle:{color:it.hex} })),
+    }],
+    graphic: [{ type:'text', left:'center', top:'center', style:{
+      text: `${items.length}${items.some(i=>i.code==='_other')?'+':''} sınıf\n${fmtArea(total)}`,
+      textAlign:'center', fill: tc.faint, fontSize:11, lineHeight:15, fontFamily:'Inter' } }]
   }, true);
 }
 
@@ -2010,10 +2060,9 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     ILISKI = iliski;
     ACIKLAMA = aciklama;
     renderGroupLogos(activePanel);
-    // Header logosu (İstanbul Plan 2050).
-    const logoBase = CONFIG.USE_LOCAL ? './Tematik Grup Logoları/' : `${RAW}/Tematik Grup Logoları/`;
+    // Header logosu (İBB · İPA · İstanbul Plan 2050).
     document.getElementById('brandMark').innerHTML =
-      `<img src="${encodeURI(logoBase + 'İstanbul Plan 2050 Logo.png')}" alt="İstanbul Plan 2050">`;
+      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
     renderReport();
   } catch (e) {
     console.error('Domain yüklenemedi:', e);
