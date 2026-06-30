@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İstanbul Plan 2050 — Detaylı Arazi Kullanımı</title>
+
+<!-- Inter: brief'te zorunlu tipografi. Yalnızca kullanılan ağırlıklar çekilir. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- MapLibre GL JS — vektör/raster harita motoru (brief: Leaflet yerine MapLibre). -->
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<!-- PMTiles protokolü — hedef mimaride 623MB veri için; geçici JSON modunda atıl bekler. -->
+<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
+<!-- ECharts — donut + sütun grafikleri (brief: drilldown ve çapraz filtre için). -->
+<script src="https://unpkg.com/echarts@5.5.1/dist/echarts.min.js"></script>
+
+
+<style>
+/* =========================================================================
+   TASARIM SİSTEMİ — Tek token seti light/dark'ı besler.
+   İBB/İPA kurumsal çizgisi; Swiss ekolü: düşük doygunluk, net hiyerarşi,
+   geniş boşluk, keskin-modern köşeler.
+   ========================================================================= */
+:root {
+  --brand:        #00929F;
+  --brand-strong: #006D77;
+  --brand-soft:   #E2F1F2;
+
+  --ink:        #16191C;
+  --ink-2:      #4A5358;
+  --ink-3:      #828D93;
+  --line:       #E3E7E9;
+  --line-2:     #EEF1F2;
+  --surface:    #FFFFFF;
+  --bg:         #F6F8F8;
+  --bg-2:       #FBFCFC;
+
+  --r:      4px;
+  --gap:    14px;
+  --header-h: 58px;
+  --rail-w:   256px;
+  --right-w:  340px;
+
+  --shadow: 0 1px 2px rgba(16,25,28,.04), 0 2px 8px rgba(16,25,28,.04);
+  --focus: 0 0 0 3px rgba(0,146,159,.35);
+}
+
+[data-theme="dark"] {
+  --brand:        #2BB8C4;
+  --brand-strong: #6FD6DF;
+  --brand-soft:   #16313440;
+
+  --ink:        #EAEEF0;
+  --ink-2:      #AEB9BE;
+  --ink-3:      #7C878C;
+  --line:       #273034;
+  --line-2:     #1E2629;
+  --surface:    #161D20;
+  --bg:         #0F1416;
+  --bg-2:       #131A1D;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 2px 10px rgba(0,0,0,.25);
+  --focus: 0 0 0 3px rgba(43,184,196,.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px; line-height: 1.5;
+  color: var(--ink); background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  /* Masaüstünde tüm öğeler viewport'a sığar; sayfa scroll'u kapalı. */
+  overflow: hidden;
+  transition: background-color .2s ease, color .2s ease;
+}
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: var(--r); }
+
+/* ============================ HEADER ============================ */
+.app-header {
+  height: var(--header-h);
+  display: flex; align-items: center; gap: var(--gap);
+  padding: 0 20px; background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: relative; z-index: 30;
+}
+.brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark {
+  width: 36px; height: 36px; flex: none;
+  display: grid; place-items: center; overflow: hidden;
+}
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+.brand-title {
+  font-weight: 700; font-size: 14px; letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.brand-sub {
+  font-size: 11px; color: var(--ink-3); font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.header-spacer { flex: 1; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+.h-btn {
+  height: 34px; padding: 0 14px; border: 1px solid transparent;
+  background: transparent; color: var(--ink-2);
+  font-size: 13px; font-weight: 500; border-radius: var(--r);
+  transition: background-color .15s, color .15s;
+}
+.h-btn:hover { background: var(--bg); color: var(--ink); }
+.h-btn-pulse { animation: hbtnPulse 1.2s ease-in-out 3; }
+@keyframes hbtnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229,0,33,.35); }
+  50% { box-shadow: 0 0 0 6px rgba(229,0,33,0); }
+}
+.theme-toggle {
+  width: 34px; height: 34px; flex: none; display: grid; place-items: center;
+  border: 1px solid var(--line); background: transparent; color: var(--ink-2);
+  border-radius: var(--r);
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.theme-toggle:hover { color: var(--brand); border-color: var(--brand); }
+.theme-toggle svg { width: 17px; height: 17px; }
+[data-theme="light"] .icon-moon { display: none; }
+[data-theme="dark"]  .icon-sun  { display: none; }
+
+/* ===================== MODAL (Metodoloji / Hakkında) ===================== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(16,25,28,.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 12px 48px rgba(16,25,28,.28);
+  width: 100%; max-width: 640px; max-height: 84vh;
+  display: flex; flex-direction: column;
+  transform: translateY(8px); transition: transform .2s ease;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.modal-head h2 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.modal-close {
+  width: 32px; height: 32px; flex: none; display: grid; place-items: center;
+  border: 1px solid var(--line); background: transparent; color: var(--ink-2);
+  border-radius: var(--r); font-size: 18px; line-height: 1;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.modal-close:hover { color: var(--brand); border-color: var(--brand); }
+.modal-body {
+  padding: 20px 22px 24px; overflow-y: auto; color: var(--ink-2);
+  font-size: 14px; line-height: 1.65;
+}
+.modal-body h3 {
+  font-size: 13px; font-weight: 700; color: var(--ink); margin: 18px 0 7px;
+  letter-spacing: .01em;
+}
+.modal-body h3:first-child { margin-top: 0; }
+.modal-body p { margin: 0 0 11px; }
+.modal-body p:last-child { margin-bottom: 0; }
+.modal-body ul { margin: 0 0 11px; padding-left: 18px; }
+.modal-body li { margin-bottom: 5px; }
+.modal-body a { color: var(--brand); text-decoration: none; }
+.modal-body a:hover { text-decoration: underline; }
+.modal-body code {
+  font-size: 12.5px; background: var(--bg); padding: 1px 5px;
+  border-radius: 3px; color: var(--ink);
+}
+.modal-note {
+  margin-top: 16px; padding: 11px 13px; background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: var(--r);
+  font-size: 12.5px; color: var(--ink-3);
+}
+
+/* ===================== ANA YERLEŞİM (viewport kilitli) ===================== */
+.app-body {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+}
+
+/* ---- Sol ray: Paneller (üst) + Filtre (alt) ---- */
+.rail {
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+.rail-section { padding: 16px 12px; }
+.rail-section + .rail-section { border-top: 1px solid var(--line); }
+.rail-panels { flex: 1; min-height: 0; overflow-y: auto; }
+.rail-filter { flex: none; background: var(--bg-2); }
+
+.rail-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); padding: 0 10px 10px;
+}
+.panel-tabs { display: flex; flex-direction: column; gap: 2px; }
+.panel-tab {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 10px; border: none; background: transparent;
+  color: var(--ink-2); font-size: 13px; font-weight: 500; text-align: left;
+  border-radius: var(--r); transition: background-color .15s, color .15s;
+}
+.panel-tab:hover { background: var(--bg); color: var(--ink); }
+.panel-tab.is-active { background: var(--brand-soft); color: var(--brand-strong); font-weight: 600; }
+.tab-index {
+  font-size: 11px; font-weight: 600; color: var(--ink-3);
+  width: 16px; flex: none; font-variant-numeric: tabular-nums;
+}
+.panel-tab.is-active .tab-index { color: var(--brand); }
+.tab-name { white-space: nowrap; }
+
+.filter-field { margin-bottom: 10px; }
+.filter-field:last-of-type { margin-bottom: 12px; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--ink-3); margin: 0 2px 5px;
+}
+.select { position: relative; }
+.select select {
+  appearance: none; -webkit-appearance: none; width: 100%; height: 34px;
+  padding: 0 32px 0 11px; font-family: inherit; font-size: 13px;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r); cursor: pointer;
+  transition: border-color .15s;
+}
+.select select:hover { border-color: var(--ink-3); }
+.select::after {
+  content: ""; position: absolute; right: 12px; top: 50%;
+  width: 7px; height: 7px; margin-top: -5px;
+  border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(45deg); pointer-events: none;
+}
+.btn-reset {
+  width: 100%; height: 34px; font-size: 13px; font-weight: 500;
+  color: var(--ink-2); background: transparent;
+  border: 1px solid var(--line); border-radius: var(--r);
+  transition: border-color .15s, color .15s;
+}
+.btn-reset:hover { border-color: var(--brand); color: var(--brand); }
+
+/* ---- İçerik sütunu ---- */
+.content { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+
+/* Aktif panel başlığı — kompakt */
+.panel-head {
+  flex: none; display: flex; align-items: center; gap: var(--gap);
+  padding: 9px 20px; border-bottom: 1px solid var(--line);
+}
+.panel-head h1 { font-size: 16px; font-weight: 700; letter-spacing: -.02em; }
+.head-text { display: flex; align-items: baseline; gap: 6px; }
+.panel-kicker {
+  font-size: 10px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+.group-logos { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.group-logos .gl-label { font-size: 11px; color: var(--ink-3); margin-right: 4px; font-weight: 500; }
+.logo-chip {
+  width: 28px; height: 28px; flex: none; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--line);
+}
+/* Tematik grup logosu — çerçevesiz (header logosu gibi). */
+.logo-img {
+  width: 30px; height: 30px; flex: none;
+  object-fit: contain; display: block;
+}
+.legend-empty { font-size: 11.5px; color: var(--ink-3); padding: 4px 0; }
+
+/* Çalışma alanı: SOL harita (büyük) + SAĞ sütun (grafik + grafik + rapor) */
+.work-area {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr var(--right-w);
+  gap: var(--gap); padding: var(--gap) 20px;
+  overflow: hidden;
+}
+
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.card-head {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--line-2);
+}
+.card-title { font-size: 13px; font-weight: 600; }
+.card-meta { font-size: 11px; color: var(--ink-3); font-weight: 500; }
+
+.map-card { min-height: 0; }
+/* MapLibre konteyneri: kartın gövdesini tümüyle kaplar. */
+.map-canvas { flex: 1; min-height: 0; position: relative; border-radius: 0 0 var(--r) var(--r); overflow: hidden; }
+#map { position: absolute; inset: 0; }
+
+/* MapLibre kontrolleri ve popup'ı kurumsal token'lara uydur. */
+.maplibregl-ctrl-group {
+  border-radius: var(--r) !important; box-shadow: var(--shadow) !important;
+  border: 1px solid var(--line) !important; background: var(--surface) !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button {
+  width: 32px !important; height: 32px !important;
+  background: var(--surface) !important; color: var(--ink-2);
+}
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--line-2) !important; }
+.maplibregl-ctrl-group button:hover { background: var(--bg) !important; color: var(--brand); }
+.maplibregl-ctrl-group button:disabled { opacity:.4; }
+
+/* ---- Tutarlı minimal ikon seti (stroke tabanlı, Inter/Swiss diliyle uyumlu) ----
+   MapLibre'nin varsayılan ikonları gizlenir; her butona currentColor maske ile
+   tek ağırlıkta (1.8px) bir SVG yerleştirilir. Böylece zoom/pusula/tam ekran +
+   özel butonlar (genel görünüm, arama, görüntü) aynı dili paylaşır. */
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { display: none !important; }
+.maplibregl-ctrl-group button::before {
+  content: ""; display: block; width: 18px; height: 18px; margin: auto;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center/18px 18px no-repeat;
+          mask: var(--icon) center/18px 18px no-repeat;
+}
+/* Zoom + / − */
+.maplibregl-ctrl-zoom-in   { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'); }
+.maplibregl-ctrl-zoom-out  { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg>'); }
+/* Pusula — kuzey oku (MapLibre bunu bearing'e göre döndürür) */
+.maplibregl-ctrl-compass   { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l4 9h-8z" fill="black"/><path d="M12 12l4 9h-8z"/></svg>'); }
+/* Tam ekran — köşelere açılan oklar */
+.maplibregl-ctrl-fullscreen { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M16 21h4a1 1 0 0 0 1-1v-4M8 21H4a1 1 0 0 1-1-1v-4"/></svg>'); }
+.maplibregl-ctrl-shrink     { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h4V4M20 8h-4V4M4 16h4v4M20 16h-4v4"/></svg>'); }
+/* Özel butonlar: ikon doğrudan SVG ile gelir (::before kullanılmaz). */
+.dak-ctrl button::before { content: none; }
+
+.maplibregl-ctrl-attrib { font-size: 10px !important; background: rgba(255,255,255,.7) !important; }
+[data-theme="dark"] .maplibregl-ctrl-attrib { background: rgba(22,29,32,.7) !important; color: var(--ink-3); }
+[data-theme="dark"] .maplibregl-ctrl-attrib a { color: var(--ink-2); }
+
+.maplibregl-popup-content {
+  font-family: 'Inter', sans-serif; padding: 0; border-radius: var(--r);
+  box-shadow: 0 4px 20px rgba(16,25,28,.18); overflow: hidden; background: var(--surface);
+}
+.maplibregl-popup-close-button { font-size: 18px; color: var(--ink-3); padding: 2px 7px; }
+[data-theme="dark"] .maplibregl-popup-tip { border-top-color: var(--surface) !important; border-bottom-color: var(--surface) !important; }
+
+/* Poligon bilgi kartı (popup içeriği) */
+.pp { width: 244px; font-size: 12.5px; color: var(--ink-2); }
+.pp-head { padding: 10px 12px; border-bottom: 1px solid var(--line-2); }
+.pp-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+.pp-title { font-weight: 700; font-size: 13px; color: var(--ink); display: inline; }
+.pp-sub { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+.pp-body { padding: 8px 12px 11px; }
+.pp-row { display: flex; gap: 8px; padding: 2px 0; }
+.pp-k { flex: none; width: 78px; color: var(--ink-3); font-size: 11.5px; }
+.pp-v { color: var(--ink); font-size: 11.5px; min-width: 0; word-break: break-word; }
+.pp-note { margin-top: 6px; padding-top: 7px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--ink-2); font-style: italic; }
+
+/* Lejant — harita üstünde sol-alt köşede; mevcut sınıflara indirgenir. */
+.legend {
+  position: absolute; left: 12px; bottom: 12px; z-index: 5;
+  width: 210px; max-height: 72%;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.legend-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--line-2);
+  font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink-2);
+}
+.legend.collapsed .legend-head { border-bottom: none; }
+.legend-count { color: var(--ink-3); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.legend-expand {
+  margin-left: auto; flex: none; width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line); border-radius: 3px;
+  background: transparent; color: var(--ink-2); cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.legend-expand:hover { color: var(--brand); border-color: var(--brand); }
+.legend-expand svg { width: 13px; height: 13px; transition: transform .2s; }
+/* Kapalı modda chevron yukarı döner (açmak için). */
+.legend.collapsed .legend-expand svg { transform: rotate(180deg); }
+.legend-body { padding: 7px 11px 9px; overflow-y: auto; }
+.legend.collapsed .legend-body { display: none; }   /* kapalı mod: yalnız başlık */
+.legend-item { display: flex; align-items: center; gap: 8px; padding: 2.5px 0; }
+.legend-sw { width: 11px; height: 11px; flex: none; border-radius: 2px; border: 1px solid rgba(0,0,0,.08); }
+.legend-label { font-size: 11.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legend-empty { font-size: 11.5px; color: var(--ink-3); padding: 4px 0; }
+
+/* Harita yükleniyor/hata durumu örtüsü */
+.map-status {
+  position: absolute; inset: 0; z-index: 6;
+  display: grid; place-items: center;
+  background: var(--bg-2);
+}
+.map-status.hidden { display: none; }
+.map-status .spinner {
+  width: 26px; height: 26px; border: 2.5px solid var(--line);
+  border-top-color: var(--brand); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.map-status .msg { margin-top: 10px; font-size: 12.5px; color: var(--ink-3); }
+.map-status.error .spinner { display: none; }
+.layer-switch { display: flex; gap: 2px; padding: 3px; background: var(--bg); border-radius: var(--r); }
+.layer-switch button {
+  padding: 4px 11px; font-size: 12px; font-weight: 500;
+  border: none; background: transparent; color: var(--ink-2);
+  border-radius: 3px; transition: background-color .15s, color .15s;
+}
+.layer-switch button.is-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* Sağ sütun: üç kart eşit yükseklik paylaşır */
+.right-col { display: grid; grid-template-rows: 1fr 1fr 1fr; gap: var(--gap); min-height: 0; }
+.chart-canvas, .report-body { flex: 1; min-height: 0; overflow: auto; }
+.chart-canvas { border-radius: 0 0 var(--r) var(--r); position: relative; }
+.echart { position: absolute; inset: 0; width: 100%; height: 100%; }
+.card-actions { display: flex; align-items: center; gap: 8px; }
+.chart-back {
+  font-size: 11px; font-weight: 600; color: var(--brand);
+  background: var(--brand-soft); border: none; border-radius: 3px;
+  padding: 2px 8px; cursor: pointer; transition: background-color .15s;
+}
+.chart-back:hover { background: var(--brand); color: #fff; }
+.chart-empty {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 12px; color: var(--ink-3); text-align: center; padding: 16px;
+}
+.report-body { padding: 14px; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+.report-body p { margin: 0 0 9px; }
+.report-body p:last-child { margin-bottom: 0; }
+/* Boş-durum: ilçe seçilmedi / metin yok */
+.report-body.is-empty { display: grid; place-items: center; text-align: center; }
+.report-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  color: var(--ink-3); font-size: 12.5px; line-height: 1.5; max-width: 240px;
+}
+.report-placeholder svg { width: 26px; height: 26px; opacity: .65; }
+.report-placeholder b { color: var(--ink-2); font-weight: 600; }
+
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  color: var(--ink-3); text-align: center; padding: 16px;
+}
+.empty svg { width: 24px; height: 24px; opacity: .7; }
+.empty .empty-title { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.empty .empty-sub { font-size: 11.5px; max-width: 260px; }
+
+/* ===================== RESPONSIVE ===================== */
+/* Dar ekranda viewport-kilidi bırakılır; doğal akış (scroll) açılır. */
+@media (max-width: 1040px) {
+  body { overflow: auto; }
+  .app-body { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .rail { border-right: none; border-bottom: 1px solid var(--line); overflow: visible; }
+  .rail-panels { overflow: visible; }
+  .panel-tabs { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .tab-index { display: none; }
+  .content { overflow: visible; }
+  .work-area { grid-template-columns: 1fr; overflow: visible; height: auto; }
+  .map-card { height: 58vh; }
+  .right-col { grid-template-rows: none; }
+  .right-col > .card { height: 300px; }
+}
+@media (max-width: 560px) {
+  .brand-sub { display: none; }
+  .h-btn { padding: 0 10px; }
+  .group-logos .gl-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================ HEADER ============================ -->
+<header class="app-header">
+  <div class="brand-lockup">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">
+      <span class="brand-title">İstanbul Plan 2050</span>
+      <span class="brand-sub">Detaylı Arazi Kullanımı</span>
+    </div>
+  </div>
+  <div class="header-spacer"></div>
+  <nav class="header-actions" aria-label="Site">
+    <button class="h-btn" type="button" id="btnMetodoloji" aria-haspopup="dialog">Metodoloji</button>
+    <button class="h-btn" type="button" id="btnHakkinda" aria-haspopup="dialog">Hakkında</button>
+    <button class="h-btn" type="button" id="btnLogin">Giriş Yap</button>
+    <span id="userBadge" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);">
+      <span id="userName"></span>
+      <button class="h-btn" type="button" id="btnLogout">Çıkış</button>
+    </span>
+    <button class="theme-toggle" id="themeToggle" type="button"
+            aria-label="Koyu/açık tema değiştir" title="Tema değiştir">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+
+<!-- ============================ GÖVDE ============================ -->
+<div class="app-body">
+
+  <!-- Sol ray -->
+  <aside class="rail" aria-label="Paneller ve filtre">
+    <div class="rail-section rail-panels">
+      <div class="rail-label">Paneller</div>
+      <div class="panel-tabs" id="panelTabs" role="tablist"></div>
+    </div>
+    <div class="rail-section rail-filter">
+      <div class="rail-label">Filtre</div>
+      <div class="filter-field">
+        <label class="field-label" for="selIlce">İlçe</label>
+        <div class="select"><select id="selIlce" disabled><option>Tümü</option></select></div>
+      </div>
+      <div class="filter-field">
+        <label class="field-label" for="selMahalle">Mahalle</label>
+        <div class="select"><select id="selMahalle" disabled><option>Tümü</option></select></div>
+      </div>
+      <button class="btn-reset" type="button">Sıfırla</button>
+    </div>
+  </aside>
+
+  <!-- İçerik -->
+  <main class="content">
+    <!-- Kompakt panel başlığı -->
+    <div class="panel-head">
+      <div class="head-text">
+        <span class="panel-kicker" id="panelKicker">01</span>
+        <h1 id="panelTitle">Genel Bakış</h1>
+      </div>
+      <div class="group-logos" id="groupLogos" aria-label="İlgili tematik gruplar" hidden></div>
+    </div>
+
+    <!-- SOL harita + SAĞ sütun -->
+    <div class="work-area">
+      <section class="card map-card">
+        <div class="card-head">
+          <span class="card-title">Arazi Kullanım Haritası</span>
+          <div class="layer-switch" role="group" aria-label="Katman"></div>
+        </div>
+        <div class="map-canvas">
+          <div id="map"></div>
+          <div class="legend" id="legend" hidden>
+            <div class="legend-head">
+              <span id="legendTitle">Alt Kullanım</span>
+              <span class="legend-count" id="legendCount"></span>
+              <button class="legend-expand" id="legendExpand" type="button"
+                      aria-label="Lejantı aç/kapa" title="Lejantı aç/kapa">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="legend-body" id="legendBody"></div>
+          </div>
+          <div class="map-status" id="mapStatus" role="status" aria-live="polite">
+            <div style="text-align:center">
+              <div class="spinner"></div>
+              <div class="msg" id="mapStatusMsg">Harita verisi yükleniyor…</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="right-col">
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title" id="donutTitle">Ana Kullanım Dağılımı</span>
+            <div class="card-actions">
+              <button class="chart-back" id="donutBack" type="button" hidden
+                      title="Üst seviyeye dön">‹ geri</button>
+              <span class="card-meta">Alan (ha)</span>
+            </div>
+          </div>
+          <div class="chart-canvas"><div class="echart" id="donutChart"></div></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title" id="barTitle">Kentsel / Kırsal Dağılım</span>
+            <span class="card-meta">Alan (ha)</span>
+          </div>
+          <div class="chart-canvas"><div class="echart" id="barChart"></div></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title">Saha Gözlem Raporu</span>
+            <span class="card-meta" id="reportMeta">İlçe seçilmedi</span>
+          </div>
+          <div class="report-body is-empty" id="reportBody"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ====================== MODALLER (taslak metinler) ====================== -->
+<div class="modal-overlay" id="modalMetodoloji" role="dialog" aria-modal="true" aria-labelledby="mmTitle" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="mmTitle">Metodoloji</h2>
+      <button class="modal-close" type="button" aria-label="Kapat" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Bu gösterge paneli, İstanbul Plan 2050 Çevre Düzeni Planı çalışmaları kapsamında
+      üretilen <b>Detaylı Arazi Kullanımı (DAK)</b> verisini interaktif olarak sunar. Amaç,
+      farklı uzmanlık alanlarına sahip tematik çalışma gruplarına yönelik bir bilgi yönetim
+      ve karar destek arayüzü sağlamaktır.</p>
+
+      <h3>Veri Kaynağı ve Yapısı</h3>
+      <p>Veri, CBS ortamında vektörel poligon yapısında kurgulanmış olup her poligon; ana, orta
+      ve alt kullanım sınıflarının yanı sıra konut, ticaret, sosyal altyapı ve resmi kullanım
+      detayları ile NACE faaliyet kodu gibi öznitelikleri taşır. Sınıflandırma sırasıyla
+      8 ana, 27 orta ve 131 alt kullanım kademesinden oluşur.</p>
+
+      <h3>Alan Hesapları</h3>
+      <p>Tüm dağılım grafikleri ve oranlar, poligonların <b>TUREF/TM30 projeksiyonunda</b>
+      hesaplanmış yüzölçümü (<code>Shape_Area</code>) değerleri üzerinden üretilir. Harita
+      görselleştirmesi WGS84 (EPSG:4326) coğrafi koordinat sisteminde sunulur.</p>
+
+      <h3>Renklendirme</h3>
+      <p>Poligonlar ve grafikler, her kullanım sınıfına atanmış kurumsal renk paletine göre
+      renklendirilir. Tematik panellerde, ilgili kategorinin alt sınıfları o panele özgü
+      ayırt edici tonlarla gösterilir; aktif kategori dışındaki alanlar bağlamı korumak için
+      soluklaştırılır.</p>
+
+      <h3>Tematik Paneller</h3>
+      <p>Genel Bakış paneli tüm veriye bütüncül bakış sunarken; Konut, Çalışma, Açık ve Yeşil
+      Alanlar, Sosyal Altyapı, Doğal Nitelikli Alanlar, Ulaşım, Su Yüzeyleri ve Diğer Alanlar
+      panelleri kendi kategorilerine ve hizmet ettikleri tematik gruplara göre özelleşir.
+      Konut paneli, saf konut alanlarının yanı sıra ticaret-konut ve sanayi-konut gibi karma
+      kullanımları da kapsar.</p>
+
+      <div class="modal-note">Bu metin bir taslaktır; nihai metodoloji metni İPA tarafından
+      sağlanacaktır.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalHakkinda" role="dialog" aria-modal="true" aria-labelledby="mhTitle" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="mhTitle">Hakkında</h2>
+      <button class="modal-close" type="button" aria-label="Kapat" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Bu gösterge paneli, <b>İstanbul Planlama Ajansı (İPA)</b> bünyesinde yürütülen
+      <b>İstanbul Plan 2050</b> çalışmaları kapsamında, Detaylı Arazi Kullanımı verisinin
+      tematik çalışma grupları tarafından izlenmesi ve analiz edilmesi amacıyla
+      geliştirilmiştir.</p>
+
+      <h3>Kapsam</h3>
+      <p>Panel; İstanbul'un 39 ilçesini kapsayan detaylı arazi kullanımı verisini, ilçe ve
+      mahalle idari sınırları ile kentsel/kırsal alan ayrımı bağlamında sunar. İlçe bazında
+      saha gözlem raporları, ilgili panellerle birlikte görüntülenebilir.</p>
+
+      <h3>Kullanım</h3>
+      <ul>
+        <li>Soldaki <b>panel sekmeleri</b> ile tematik kategoriler arasında geçiş yapın.</li>
+        <li><b>İlçe</b> ve <b>mahalle</b> filtreleriyle ilgilendiğiniz alana odaklanın.</li>
+        <li>Harita üzerindeki katman butonlarıyla farklı sınıflandırma kademelerini görüntüleyin.</li>
+        <li>Poligonlara tıklayarak ayrıntılı öznitelik bilgisine ulaşın.</li>
+        <li>Grafikler ve saha gözlem raporu, seçili filtreye göre güncellenir.</li>
+      </ul>
+
+      <h3>Veri ve Sorumluluk</h3>
+      <p>Veriler İPA ve İBB ilgili birimlerince üretilmiş olup çalışma amaçlıdır. Veri sürümü
+      ve güncellik bilgisi için ilgili birimle iletişime geçilmelidir.</p>
+
+      <div class="modal-note">Bu metin bir taslaktır; nihai "Hakkında" metni ve iletişim
+      bilgileri İPA tarafından sağlanacaktır.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   KONFİGÜRASYON — Tüm veri yolları tek noktada. Yerel/uzak ve JSON/PMTiles
+   geçişi buradan. Geliştirmede Live Server için USE_LOCAL=true yapılır.
+   ========================================================================= */
+const RAW = "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main";
+
+// ArcGIS FeatureServer — canlı portal verisi (geo.ipa.istanbul). detayli_ak.json'un
+// statik GitHub kopyası yerine bu kaynaktan, LOD (zoom'a göre detay seviyesi) ile çekilir.
+const ARCGIS = {
+  portal: "https://geo.ipa.istanbul/portal",
+  featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/detayli_ak/FeatureServer/0",
+  outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
+  pageSize: 2000,
+  oauth: {
+    clientId: "YqPOwINqmmEYEmqG",
+    // Çalışılan ortama göre otomatik seçilir: Live Server'da test ederken
+    // mevcut sayfa adresi kullanılır, sunucuya yüklenince kendi adresi kullanılır.
+    // Not: Bu adresin Portal'daki "Yeniden Yönlendirme URL'leri" listesinde
+    // BİREBİR aynı şekilde kayıtlı olması gerekir.
+    redirectUri: window.location.origin + window.location.pathname
+  }
+};
+
+const CONFIG = {
+  USE_LOCAL:   false,   // true: ./ göreli yollar (Live Server), false: GitHub raw
+  USE_PMTILES: false,   // false: geçici detayli_ak.json, true: hedef PMTiles (Modül 0 çıktısı)
+  USE_ARCGIS:  true,    // true: detayli_ak verisi geo.ipa.istanbul FeatureServer'dan canlı çekilir
+
+  remote: {
+    detayli_ak_json:    `${RAW}/detayli_ak.json`,
+    detayli_ak_pmtiles: `${RAW}/detayli_ak.pmtiles`,
+    sinir_ilce:         `${RAW}/sinir_ilce.json`,
+    sinir_mahalle:      `${RAW}/sinir_mahalle.json`,
+    sinir_kent_kir:     `${RAW}/sinir_kent_kir.json`,
+    domain:             `${RAW}/data/domain.json`,
+    iliski:             `${RAW}/data/iliski.json`,
+    ilce_aciklama:      `${RAW}/data/ilce_aciklama.json`,
+  },
+  local: {
+    detayli_ak_json:    "./detayli_ak.json",
+    detayli_ak_pmtiles: "./detayli_ak.pmtiles",
+    sinir_ilce:         "./sinir_ilce.json",
+    sinir_mahalle:      "./sinir_mahalle.json",
+    sinir_kent_kir:     "./sinir_kent_kir.json",
+    domain:             "./data/domain.json",
+    iliski:             "./data/iliski.json",
+    ilce_aciklama:      "./data/ilce_aciklama.json",
+  },
+
+  // CartoDB raster altlık — temaya göre seçilir (brief: CartoDB light_all).
+  basemap: {
+    light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    dark:  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>'
+  },
+
+  istanbul: { center: [28.97, 41.05], zoom: 9 }
+};
+const url = (key) => (CONFIG.USE_LOCAL ? CONFIG.local : CONFIG.remote)[key];
+
+/* =========================================================================
+   PANELLER + KABUK — panel sekmeleri ve tema (Modül 1'den).
+   ========================================================================= */
+const PANELS = [
+  "Genel Bakış", "Konut Alanları", "Çalışma Alanları",
+  "Kentsel Açık ve Yeşil Alanlar", "Sosyal Altyapı",
+  "Doğal Nitelikli Alanlar", "Ulaşım ve Altyapı",
+  "Su Yüzeyleri", "Diğer Alanlar"
+];
+
+/* =========================================================================
+   GLOBAL DURUM — tek doğruluk kaynağı. Harita, grafik (Modül 5), metin
+   (Modül 6) bu state'e tepki verir. URL hash ile paylaşılabilir.
+   ========================================================================= */
+const STATE = { panel: PANELS[0], ilce: null, mahalle: null };
+// Eski kod uyumluluğu için activePanel'i STATE.panel'e bağlı tut.
+let activePanel = STATE.panel;
+
+// Panel ↔ kısa slug (URL hash için okunur).
+const PANEL_SLUG = {
+  "Genel Bakış":"genel", "Konut Alanları":"konut", "Çalışma Alanları":"calisma",
+  "Kentsel Açık ve Yeşil Alanlar":"acikyesil", "Sosyal Altyapı":"sosyal",
+  "Doğal Nitelikli Alanlar":"dogal", "Ulaşım ve Altyapı":"ulasim",
+  "Su Yüzeyleri":"su", "Diğer Alanlar":"diger"
+};
+const SLUG_PANEL = Object.fromEntries(Object.entries(PANEL_SLUG).map(([k,v])=>[v,k]));
+
+let _hashWriting = false;
+function writeHash() {
+  _hashWriting = true;
+  const parts = [`panel=${PANEL_SLUG[STATE.panel]}`];
+  if (STATE.ilce)    parts.push(`ilce=${encodeURIComponent(STATE.ilce)}`);
+  if (STATE.mahalle) parts.push(`mahalle=${encodeURIComponent(STATE.mahalle)}`);
+  location.hash = parts.join('&');
+  setTimeout(()=>{ _hashWriting=false; }, 0);
+}
+function readHash() {
+  const h = location.hash.replace(/^#/, '');
+  const out = {};
+  for (const kv of h.split('&')) {
+    const [k,v] = kv.split('=');
+    if (k && v) out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+const tabsEl   = document.getElementById('panelTabs');
+const titleEl  = document.getElementById('panelTitle');
+const kickerEl = document.getElementById('panelKicker');
+
+PANELS.forEach((name, i) => {
+  const b = document.createElement('button');
+  b.className = 'panel-tab' + (i === 0 ? ' is-active' : '');
+  b.setAttribute('role', 'tab');
+  b.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+  b.tabIndex = i === 0 ? 0 : -1;   // roving tabindex: yalnız aktif sekme Tab ile odaklanır
+  b.innerHTML = `<span class="tab-index">${String(i + 1).padStart(2, '0')}</span>
+                 <span class="tab-name">${name}</span>`;
+  b.addEventListener('click', () => selectPanel(i));
+  // Ok tuşlarıyla sekmeler arası gezinme (WAI-ARIA tablist deseni).
+  b.addEventListener('keydown', (e) => {
+    let ni = null;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') ni = (i + 1) % PANELS.length;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ni = (i - 1 + PANELS.length) % PANELS.length;
+    else if (e.key === 'Home') ni = 0;
+    else if (e.key === 'End') ni = PANELS.length - 1;
+    if (ni !== null) { e.preventDefault(); selectPanel(ni); tabsEl.children[ni].focus(); }
+  });
+  tabsEl.appendChild(b);
+});
+tabsEl.setAttribute('aria-label', 'Tematik paneller');
+
+function selectPanel(i) {
+  [...tabsEl.children].forEach((b, idx) => {
+    const on = idx === i;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;   // roving tabindex
+  });
+  STATE.panel = PANELS[i];
+  activePanel = STATE.panel;
+  titleEl.textContent  = PANELS[i];
+  kickerEl.textContent = String(i + 1).padStart(2, '0');
+  if (dataLoaded) applyPanel(activePanel);
+  else renderGroupLogos(activePanel);
+  writeHash();
+}
+
+/* ---- Tema ---- */
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeToggle');
+function readTheme(){ try { return localStorage.getItem('dak-theme'); } catch(e){ return null; } }
+function writeTheme(v){ try { localStorage.setItem('dak-theme', v); } catch(e){} }
+const savedTheme = readTheme();
+if (savedTheme) root.setAttribute('data-theme', savedTheme);
+else if (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)
+  root.setAttribute('data-theme', 'dark');
+themeBtn.addEventListener('click', () => {
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  writeTheme(next);
+  syncBasemapTheme();   // altlık temayla birlikte değişir
+});
+
+/* =========================================================================
+   DOMAIN LOOKUP — Tek merkezi, TİP-GÜVENLİ erişim katmanı.
+   KRİTİK: Veride kodlar string ("8"), domain'de int (8). Tüm anahtarlar
+   String()'e normalize edilir; böylece veri "8" ile domain 8 buluşur.
+   ========================================================================= */
+const DOM = { ready:false, raw:null };
+
+function indexByCode(arr) {
+  // code -> {label, hex, ...}, anahtar daima string.
+  const m = new Map();
+  for (const it of arr) m.set(String(it.code), it);
+  return m;
+}
+
+function buildLookups(domain) {
+  DOM.raw = domain;
+  DOM.ana   = indexByCode(domain.ana_kullanim);
+  DOM.orta  = indexByCode(domain.orta_kullanim);
+  DOM.alt   = indexByCode(domain.alt_kullanim);
+  DOM.nace  = indexByCode(domain.nace);
+  DOM.detay_konut   = indexByCode(domain.detay_konut);
+  DOM.detay_ticaret = indexByCode(domain.detay_ticaret);
+  DOM.detay_resmi   = indexByCode(domain.detay_resmi);
+  DOM.detay_sosyal  = indexByCode(domain.detay_sosyal);
+  // Panel override: panel adı -> (alt kod string -> hex)
+  DOM.panelAlt = {};
+  for (const [panel, rows] of Object.entries(domain.panel_alt_kullanim || {})) {
+    DOM.panelAlt[panel] = indexByCode(rows);
+  }
+  DOM.ready = true;
+}
+
+// Etiket ve renk yardımcıları — her yerde bunlar kullanılır (tip güvenli).
+const labelOf = (level, code) => DOM[level]?.get(String(code))?.label ?? String(code);
+const hexOf   = (level, code) => DOM[level]?.get(String(code))?.hex   ?? "#C9D1D4";
+
+// Aktif panele göre alt_kullanim rengi: panel override varsa o, yoksa kanonik.
+function altHex(code, panel) {
+  const ov = DOM.panelAlt[panel];
+  const key = String(code);
+  return (ov && ov.has(key) ? ov.get(key).hex : DOM.alt.get(key)?.hex) ?? "#C9D1D4";
+}
+
+/* =========================================================================
+   HARİTA — MapLibre GL. Önce domain yüklenir (renkler ona bağlı), sonra
+   altlık + veri kurulur.
+   ========================================================================= */
+const statusEl = document.getElementById('mapStatus');
+const statusMsg = document.getElementById('mapStatusMsg');
+function showStatus(msg, isError=false) {
+  statusEl.classList.remove('hidden');
+  statusEl.classList.toggle('error', isError);
+  statusMsg.textContent = msg;
+}
+function hideStatus() { statusEl.classList.add('hidden'); }
+
+let map = null;
+let dataLoaded = false;
+
+const SRC = 'dak';                 // detayli_ak kaynağı
+const FILL = 'dak-fill';
+const B_ILCE='b-ilce', B_MAH='b-mah', B_KK='b-kk';
+let ISTANBUL_BOUNDS = null;        // tüm ilçe sınırlarının kapsamı (il extent butonu)
+let ILCE_DATA = null;              // sinir_ilce GeoJSON (filtre + vurgu)
+let MAHALLE_DATA = null;           // sinir_mahalle GeoJSON (lazy yüklenir)
+let MAHALLE_LOADING = null;        // lazy yükleme promise'i (tekrarı önler)
+let KIMLIK2AD = null;              // ilçe KIMLIKNO -> ilçe adı
+const B_ILCE_HL='b-ilce-hl', B_MAH_HL='b-mah-hl';  // seçili ilçe/mahalle vurgu katmanları
+const FALLBACK = "#C9D1D4";        // eşleşmeyen / kategori dışı nötr gri
+// Dimming: tematik panelde aktif kategori dışı poligonlar soluk gösterilir (bağlam korunur).
+const DIM_OPACITY_ACTIVE = 0.85, DIM_OPACITY_OTHER = 0.25;  // diğerleri %75 transparan
+function dimColor() { return root.getAttribute('data-theme')==='dark' ? '#2A3236' : '#E6EAEB'; }
+
+/* Katman tanımları: her biri bir öznitelik alanını domain seviyesine bağlar.
+   override:true → alt_kullanim panele özgü renklerle (panel_alt_kullanim). */
+const LAYERS = {
+  alt:    { label:'Alt',   field:'alt_kullanim',         dom:'alt',          override:true },
+  orta:   { label:'Orta',  field:'orta_kullanim',        dom:'orta' },
+  ana:    { label:'Ana',   field:'ana_kullanim',         dom:'ana' },
+  konut:  { label:'Detay', field:'detay_konut',          dom:'detay_konut' },
+  nace:   { label:'NACE',  field:'nacekodu',             dom:'nace' },
+  sosyal: { label:'Detay', field:'detay_sosyalaltyapi',  dom:'detay_sosyal' },
+};
+
+/* Panel → ana kullanım kategorisi + sunulan katman geçişleri (şartname matrisi).
+   ana:null → filtresiz (Genel Bakış tüm veriyi gösterir). */
+const PANEL_CONFIG = {
+  "Genel Bakış":                   { ana:null,               layers:['alt','orta','ana'] },
+  "Konut Alanları":                { ana:'01_Konut',         layers:['alt','konut'] },
+  "Çalışma Alanları":              { ana:'02_Calisma',       layers:['alt','nace'] },
+  "Kentsel Açık ve Yeşil Alanlar": { ana:'03_AcikYesil',     layers:['alt','orta'] },
+  "Sosyal Altyapı":                { ana:'04_SosyalAltyapi', layers:['alt','sosyal'] },
+  "Doğal Nitelikli Alanlar":       { ana:'05_Dogal',         layers:['alt'] },
+  "Ulaşım ve Altyapı":             { ana:'06_UlasimAltyapi', layers:['alt'] },
+  "Su Yüzeyleri":                  { ana:'07_Su',            layers:['alt'] },
+  "Diğer Alanlar":                 { ana:'08_Diger',         layers:['alt'] },
+};
+
+/* iliski.json anahtarı dashboard panel adından farklı olabilir; köprüle. */
+const ILISKI_KEY = { "Kentsel Açık ve Yeşil Alanlar": "Açık ve Yeşil Alanlar" };
+
+let currentLayer = 'alt';          // aktif katman anahtarı (LAYERS içinden)
+let ILISKI = null;                 // panel → logo dosya adları
+let ACIKLAMA = null;               // ilçe → panel → saha gözlem metni
+
+function basemapTilesForTheme() {
+  const dark = root.getAttribute('data-theme') === 'dark';
+  return [ (dark ? CONFIG.basemap.dark : CONFIG.basemap.light)
+            .replace('{s}','a'), // MapLibre {s} desteklemez; sabit alt-alan
+         ];
+}
+function syncBasemapTheme() {
+  if (!map || !map.getSource('basemap')) return;
+  try { map.getSource('basemap').setTiles(basemapTilesForTheme()); } catch(e){}
+}
+
+function baseStyle() {
+  return {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      basemap: {
+        type: 'raster', tiles: basemapTilesForTheme(), tileSize: 256,
+        attribution: CONFIG.basemap.attribution
+      }
+    },
+    layers: [{ id: 'basemap', type: 'raster', source: 'basemap' }]
+  };
+}
+
+// Domain seviyesine karşılık gelen ham liste.
+function domListFor(domKey) {
+  const map = {
+    alt: DOM.raw.alt_kullanim, orta: DOM.raw.orta_kullanim, ana: DOM.raw.ana_kullanim,
+    nace: DOM.raw.nace, detay_konut: DOM.raw.detay_konut,
+    detay_ticaret: DOM.raw.detay_ticaret, detay_resmi: DOM.raw.detay_resmi,
+    detay_sosyal: DOM.raw.detay_sosyal,
+  };
+  return map[domKey] || [];
+}
+
+// Birleşik "aktif" koşulu: aktif panel kategorisi VE seçili ilçe (varsa).
+// Eşleşen poligonlar tam renk/opaklık; diğerleri soluk (dimming).
+// Panelin "ilgili" alt kullanım kod seti (panel_alt_kullanim'den; karma sınıflar dahil).
+// Bu set, Konut panelinde Ticaret-Konut/Sanayi-Konut gibi karma sınıfları da kapsar.
+function panelAltCodes(panel) {
+  const key = ILISKI_KEY[panel] || panel;       // panel_alt_kullanim anahtarı dashboard adıyla aynı
+  const ov = DOM.panelAlt[panel] || DOM.panelAlt[key];
+  return ov ? [...ov.keys()] : null;            // string kod dizisi, yoksa null
+}
+// JS tarafı: aktif koşulu mirror eden predicate (lejant + grafik agregasyonu için).
+function panelAltCodeSet(panel) {
+  const arr = panelAltCodes(panel);
+  return arr ? new Set(arr) : null;
+}
+function activePredicate(panel, includeIlce=true) {
+  const set = panelAltCodeSet(panel);
+  const ana = PANEL_CONFIG[panel]?.ana || null;
+  const ilce = includeIlce ? STATE.ilce : null;
+  return (p) => {
+    if (set) { if (!set.has(String(p.alt_kullanim))) return false; }
+    else if (ana) { if (p.ana_kullanim !== ana) return false; }
+    if (ilce && p.ilce_adi !== ilce) return false;
+    return true;
+  };
+}
+
+function activeCondition(panel) {
+  const conds = [];
+  // Tematik kategori koşulu: panelin alt kod seti varsa ona göre (karma konut dahil),
+  // yoksa ana_kullanim'e göre (örn. Diğer Alanlar). Genel Bakış'ta koşul yok.
+  const altCodes = panelAltCodes(panel);
+  const panelAna = PANEL_CONFIG[panel]?.ana || null;
+  if (altCodes && altCodes.length) {
+    conds.push(['in', ['get','alt_kullanim'], ['literal', altCodes]]);
+  } else if (panelAna) {
+    conds.push(['==', ['get','ana_kullanim'], panelAna]);
+  }
+  if (STATE.ilce) conds.push(['==', ['get','ilce_adi'], STATE.ilce]);
+  if (conds.length === 0) return null;          // her şey aktif (Genel Bakış, ilçe yok)
+  if (conds.length === 1) return conds[0];
+  return ['all', ...conds];
+}
+
+// Renk ifadesi (data-driven). Aktif koşul dışı poligonlar soluk gri.
+function colorExpression(layerKey, panel) {
+  const L = LAYERS[layerKey];
+  const expr = ['match', ['get', L.field]];
+  let entries;
+  if (L.override) {
+    entries = DOM.raw.alt_kullanim.map(x => [String(x.code), altHex(x.code, panel)]);
+  } else {
+    entries = domListFor(L.dom).map(x => [String(x.code), x.hex]);
+  }
+  for (const [code, hex] of entries) expr.push(code, hex);
+  expr.push(FALLBACK);
+
+  const cond = activeCondition(panel);
+  if (!cond) return expr;
+  return ['case', cond, expr, dimColor()];
+}
+
+// Opaklık ifadesi: aktif koşul belirgin, diğerleri saydam.
+function opacityExpression(panel) {
+  const cond = activeCondition(panel);
+  if (!cond) return 0.82;
+  return ['case', cond, DIM_OPACITY_ACTIVE, DIM_OPACITY_OTHER];
+}
+
+/* İl bütünü extent'i kontrolü — tüm İstanbul ilçe sınırlarının kapsamına oturur. */
+class FitProvinceControl {
+  onAdd(m) {
+    this._map = m;
+    this._c = document.createElement('div');
+    this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.title = 'İl bütünü görünümü';
+    b.setAttribute('aria-label','İl bütünü görünümü');
+    // Genel görünüm: sürekli çerçeve + merkez nokta (vizör). Tam ekranın köşe
+    // oklarından net ayrışır.
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/></svg>`;
+    b.addEventListener('click', () => {
+      if (ISTANBUL_BOUNDS) this._map.fitBounds(ISTANBUL_BOUNDS, { padding: 30, duration: 600 });
+    });
+    this._c.appendChild(b);
+    return this._c;
+  }
+  onRemove() { this._c.parentNode && this._c.parentNode.removeChild(this._c); }
+}
+
+/* Ekran görüntüsü kontrolü — harita kanvasını PNG olarak indirir.
+   preserveDrawingBuffer:true sayesinde canvas.toDataURL() boş gelmez. */
+class SnapshotControl {
+  onAdd(m) {
+    this._map = m;
+    this._c = document.createElement('div');
+    this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.title = 'Haritayı görüntü olarak kaydet';
+    b.setAttribute('aria-label','Haritayı görüntü olarak kaydet');
+    // Kamera ikonu (minimal, set ile tutarlı).
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M5 8h2.5l1.2-1.6a1 1 0 0 1 .8-.4h5a1 1 0 0 1 .8.4L16.5 8H19a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3"/></svg>`;
+    b.addEventListener('click', () => this._save());
+    this._c.appendChild(b);
+    return this._c;
+  }
+  _save() {
+    // Render'ın tamamlanmasını bekleyip kanvası yakala.
+    this._map.once('render', () => {
+      try {
+        const url = this._map.getCanvas().toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = snapshotFilename();
+        document.body.appendChild(a); a.click(); a.remove();
+      } catch (e) { console.error('Görüntü kaydedilemedi:', e); }
+    });
+    this._map.triggerRepaint();
+  }
+  onRemove() { this._c.parentNode && this._c.parentNode.removeChild(this._c); }
+}
+
+/* Otomatik dosya adı: DAK_<Panel>_<İlçe>_<YYYY-AA-GG>.png (Türkçe sadeleştirilmiş). */
+function snapshotFilename() {
+  const sad = (s) => (s||'')
+    .replace(/ı/g,'i').replace(/İ/g,'I').replace(/ş/g,'s').replace(/Ş/g,'S')
+    .replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ü/g,'u').replace(/Ü/g,'U')
+    .replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ç/g,'c').replace(/Ç/g,'C')
+    .replace(/\s+/g,'').replace(/[^A-Za-z0-9]/g,'');
+  const d = new Date();
+  const tarih = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const parts = ['DAK', sad(activePanel)];
+  if (STATE.ilce) parts.push(sad(STATE.ilce));
+  parts.push(tarih);
+  return parts.join('_') + '.png';
+}
+
+/* =========================================================================
+   ARCGIS FEATURESERVER — geo.ipa.istanbul Portal'ından canlı veri çekimi.
+   LOD mantığı: düşük zoom'da sadeleştirilmiş/az alanlı, yüksek zoom'da detaylı
+   geometri. esri-leaflet'teki LowRes/HighRes katman ikilisinin MapLibre karşılığı.
+   ========================================================================= */
+/* =========================================================================
+   ARCGIS OAUTH2 — Portal kullanıcı girişi (implicit grant, sunucu kodu gerekmez).
+   Akış: "Giriş Yap" → Portal login sayfası → kullanıcı onaylar → bu sayfaya
+   #access_token=... ile geri döner → token sessionStorage'a yazılır → her
+   FeatureServer isteğine eklenir.
+   ========================================================================= */
+const TOKEN_KEY = "ip50_arcgis_token";
+const USER_KEY  = "ip50_arcgis_user";
+
+function getStoredToken() {
+  const raw = sessionStorage.getItem(TOKEN_KEY);
+  if (!raw) return null;
+  try {
+    const t = JSON.parse(raw);
+    if (t.expires && Date.now() > t.expires) { sessionStorage.removeItem(TOKEN_KEY); return null; }
+    return t.token;
+  } catch { return null; }
+}
+
+function startLogin() {
+  const p = new URLSearchParams({
+    client_id: ARCGIS.oauth.clientId,
+    response_type: 'token',
+    expiration: 20160, // dakika — 2 hafta (Portal üst sınırı)
+    redirect_uri: ARCGIS.oauth.redirectUri
+  });
+  window.location.href = `${ARCGIS.portal}/sharing/rest/oauth2/authorize?${p.toString()}`;
+}
+
+function logout() {
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+  updateAuthUI(null);
+}
+
+// Sayfa #access_token=...&username=...&expires_in=... ile geri döndüyse yakala.
+function consumeOAuthRedirect() {
+  if (!window.location.hash || !window.location.hash.includes('access_token')) return false;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get('access_token');
+  const username = params.get('username') || '';
+  const expiresIn = Number(params.get('expires_in')) || 7200; // saniye
+  if (token) {
+    sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token, expires: Date.now() + expiresIn*1000 }));
+    sessionStorage.setItem(USER_KEY, username);
+    // URL'i temizle — token tarayıcı geçmişinde/adres çubuğunda görünmesin.
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    return true;
+  }
+  return false;
+}
+
+function updateAuthUI(username) {
+  const loginBtn  = document.getElementById('btnLogin');
+  const userBadge = document.getElementById('userBadge');
+  const userName  = document.getElementById('userName');
+  if (username) {
+    loginBtn.style.display = 'none';
+    userBadge.style.display = 'inline-flex';
+    userName.textContent = username;
+  } else {
+    loginBtn.style.display = '';
+    userBadge.style.display = 'none';
+  }
+}
+
+function initAuth() {
+  consumeOAuthRedirect();
+  const token = getStoredToken();
+  const user = sessionStorage.getItem(USER_KEY);
+  updateAuthUI(token ? user : null);
+  document.getElementById('btnLogin').addEventListener('click', startLogin);
+  document.getElementById('btnLogout').addEventListener('click', logout);
+}
+
+
+async function fetchArcGISCount(where) {
+  const tk = getStoredToken();
+  const u = `${ARCGIS.featureServer}/query?where=${encodeURIComponent(where)}&returnCountOnly=true&f=json${tk ? `&token=${tk}` : ''}`;
+  const r = await fetch(u);
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || 'ArcGIS sorgu hatası');
+  return j.count || 0;
+}
+
+async function fetchArcGISFeatureCollection(opts) {
+  const { where='1=1', maxAllowableOffset=0, geometryPrecision=6, onProgress } = opts;
+  const total = await fetchArcGISCount(where);
+  const offsets = [];
+  for (let o=0; o<total; o += ARCGIS.pageSize) offsets.push(o);
+
+  const BATCH = 5; // paralel istek sayısı — sunucuyu boğmadan hızlı toplama
+  const pages = new Array(offsets.length);
+  let done = 0;
+  const tk = getStoredToken();
+
+  for (let i=0; i<offsets.length; i+=BATCH) {
+    const slice = offsets.slice(i, i+BATCH);
+    await Promise.all(slice.map(async (offset, bi) => {
+      const params = new URLSearchParams({
+        where, outFields: ARCGIS.outFields, returnGeometry: 'true',
+        f: 'geojson', resultOffset: offset, resultRecordCount: ARCGIS.pageSize,
+        maxAllowableOffset, geometryPrecision, outSR: 4326
+      });
+      if (tk) params.set('token', tk);
+      const r = await fetch(`${ARCGIS.featureServer}/query?${params.toString()}`);
+      const fc = await r.json();
+      // ArcGIS GeoJSON çıktısında alan SHAPE__Area (çift alt çizgi) adıyla gelir;
+      // mevcut agregasyon/popup kodu Shape_Area (tek alt çizgi) bekliyor — eşitle.
+      const feats = (fc.features || []);
+      for (const f of feats) {
+        if (f.properties && f.properties.Shape_Area == null) {
+          f.properties.Shape_Area = f.properties.SHAPE__Area ?? f.properties.shape__area ?? 0;
+        }
+      }
+      pages[i+bi] = feats;
+      done += pages[i+bi].length;
+      if (onProgress) onProgress(Math.min(done, total), total);
+    }));
+  }
+  return { type:'FeatureCollection', features: pages.flat() };
+}
+
+// Tek aşamalı yükleme: doğrudan tam çözünürlükte veri çekilir (LOD geçişi kaldırıldı —
+// kullanıcı zoom yaptığında ikinci bir yükleme beklemesin diye).
+async function loadDakFromArcGIS(where='1=1') {
+  if (!getStoredToken()) {
+    showStatus("Veriye erişmek için giriş yapmanız gerekiyor.", true);
+    document.getElementById('btnLogin').classList.add('h-btn-pulse');
+    throw new Error('Giriş yapılmadı');
+  }
+  showStatus("Arazi kullanım verisi yükleniyor…");
+  const fc = await fetchArcGISFeatureCollection({
+    where, maxAllowableOffset: 0, geometryPrecision: 6,
+    onProgress: (d,t) => showStatus(`Arazi kullanım verisi yükleniyor… ${d}/${t}`)
+  });
+  window.__dakHighResReady = true;
+  return fc;
+}
+
+
+function initMap() {
+  if (typeof maplibregl === 'undefined') {
+    showStatus("Harita motoru yüklenemedi (çevrimdışı olabilir).", true);
+    return;
+  }
+  // PMTiles protokolü (hedef mimaride). Geçici JSON modunda kayıt zararsızdır.
+  try {
+    if (window.pmtiles) {
+      const p = new pmtiles.Protocol();
+      maplibregl.addProtocol('pmtiles', p.tile);
+    }
+  } catch(e){}
+
+  map = new maplibregl.Map({
+    container: 'map',
+    style: baseStyle(),
+    center: CONFIG.istanbul.center,
+    zoom: CONFIG.istanbul.zoom,
+    attributionControl: true,
+    preserveDrawingBuffer: true,   // ekran görüntüsü (toDataURL) için gerekli
+    hash: false
+  });
+  // Navigasyon: zoom + pusula (pusulaya tıklama kuzeye hizalar).
+  map.addControl(new maplibregl.NavigationControl({ showCompass:true, visualizePitch:true }), 'top-right');
+  // İl bütünü extent'ine getir (özel buton) — tam ekrandan önce.
+  map.addControl(new FitProvinceControl(), 'top-right');
+  // Ekran görüntüsü (harita kanvası → PNG).
+  map.addControl(new SnapshotControl(), 'top-right');
+  // Tam ekran.
+  map.addControl(new maplibregl.FullscreenControl({ container: document.querySelector('.map-canvas') }), 'top-right');
+  map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
+
+  map.on('load', onMapLoad);
+  map.on('error', (e) => console.warn('MapLibre:', e && e.error));
+}
+
+async function onMapLoad() {
+  if (dataLoaded || map.getSource(SRC)) return;   // çift tetiklemeye karşı koruma
+  try {
+    // Sınır verileri ve detaylı arazi kullanımı paralel çekilir.
+    const [dak, ilce, kk] = await Promise.all([
+      CONFIG.USE_ARCGIS ? loadDakFromArcGIS() : fetchJSON(url('detayli_ak_json')),
+      fetchJSON(url('sinir_ilce')),
+      fetchJSON(url('sinir_kent_kir')),
+      // mahalle sınırı büyük (17MB) — Modül 4 filtresinde lazy yüklenecek; şimdi atlanır.
+    ]);
+
+    // ---- Sınır katmanları (en altta, dolgusuz çizgi) ----
+    map.addSource(B_KK,   { type:'geojson', data: kk });
+    map.addSource(B_ILCE, { type:'geojson', data: ilce });
+    map.addLayer({ id:B_KK, type:'line', source:B_KK,
+      paint:{ 'line-color': themeLineSoft(), 'line-width':1, 'line-dasharray':[2,2] } });
+
+    // ---- Detaylı arazi kullanımı (yalnız dolgu — kontur yok) ----
+    // tolerance: MapLibre'nin kendi içindeki vektör-tile sadeleştirmesi (LOD'un
+    // ikinci katmanı — ArcGIS tarafındaki maxAllowableOffset'e ek, render hızını artırır).
+    map.addSource(SRC, { type:'geojson', data: dak, tolerance: 0.6, buffer: 16, maxzoom: 16 });
+    map.addLayer({ id:FILL, type:'fill', source:SRC,
+      paint:{ 'fill-color': colorExpression(currentLayer, activePanel),
+              'fill-opacity': opacityExpression(activePanel) } });
+
+    // İlçe sınırı dolgunun ÜSTÜNDE (okunur kontur).
+    map.addLayer({ id:B_ILCE, type:'line', source:B_ILCE,
+      paint:{ 'line-color': themeLineStrong(), 'line-width':1.4 } });
+
+    // İl bütünü extent'i: tüm ilçe sınırlarının kapsamı (kontrol butonu kullanır).
+    ISTANBUL_BOUNDS = boundsOf(ilce);
+    ILCE_DATA = ilce;
+
+    // Seçili ilçe/mahalle vurgu katmanları (başta boş).
+    map.addSource(B_ILCE_HL, { type:'geojson', data: emptyFC() });
+    map.addSource(B_MAH_HL,  { type:'geojson', data: emptyFC() });
+    map.addLayer({ id:B_ILCE_HL, type:'line', source:B_ILCE_HL,
+      paint:{ 'line-color':'#00929F', 'line-width':2.6 } });
+    map.addLayer({ id:B_MAH_HL, type:'line', source:B_MAH_HL,
+      paint:{ 'line-color':'#E0A800', 'line-width':2.2, 'line-dasharray':[1.5,1] } });
+
+    // Veri kapsamına yakınlaş (örnekte yalnız mevcut ilçeler).
+    fitToData(dak);
+
+    wirePopup();
+    buildLegend(dak);
+    DAK_FC = dak;              // grafik agregasyonu için yüklenen veriyi sakla
+    initCharts();
+    applyPanel(activePanel);   // aktif panele göre katman butonları + dimming + logolar + grafikler
+    initFilters();             // ilçe dropdown'unu doldur, kademeli filtre kur
+
+    dataLoaded = true;
+    hideStatus();
+    applyHashOnLoad();         // URL'de durum varsa uygula
+  } catch (err) {
+    console.error(err);
+    showStatus("Veri yüklenemedi. Bağlantıyı kontrol edin.", true);
+  }
+}
+
+async function fetchJSON(u) {
+  const r = await fetch(u);
+  if (!r.ok) throw new Error(`${u} → HTTP ${r.status}`);
+  return r.json();
+}
+
+function themeLineSoft()   { return root.getAttribute('data-theme')==='dark' ? 'rgba(140,150,155,.45)' : 'rgba(90,100,105,.35)'; }
+function themeLineStrong() { return root.getAttribute('data-theme')==='dark' ? 'rgba(190,200,205,.7)'  : 'rgba(40,50,55,.55)'; }
+
+// GeoJSON kapsam kutusu (LngLatBounds) hesapla.
+function boundsOf(fc) {
+  const b = new maplibregl.LngLatBounds(); let any=false;
+  for (const f of fc.features) {
+    const g=f.geometry; if(!g) continue;
+    const polys = g.type==='Polygon' ? [g.coordinates] : g.type==='MultiPolygon' ? g.coordinates : [];
+    for (const poly of polys) for (const ring of poly) for (const c of ring) { b.extend(c); any=true; }
+  }
+  return any ? b : null;
+}
+
+function fitToData(fc) {
+  const b = boundsOf(fc);
+  if (b) map.fitBounds(b, { padding: 36, duration: 0 });
+}
+
+/* ---- Panel uygulama: katman butonları + harita filtresi + logolar ---- */
+function applyPanel(panel) {
+  const cfg = PANEL_CONFIG[panel];
+  if (!cfg || !map || !map.getLayer(FILL)) return;
+
+  // 1) Katman geçiş butonlarını panele göre yeniden kur.
+  currentLayer = cfg.layers[0];
+  const wrap = document.querySelector('.layer-switch');
+  wrap.innerHTML = cfg.layers.map((k,i) =>
+    `<button class="${i===0?'is-active':''}" type="button" data-layer="${k}">${LAYERS[k].label}</button>`
+  ).join('');
+  wrap.style.display = cfg.layers.length > 1 ? '' : 'none';  // tek katmanlıysa gizle
+  [...wrap.querySelectorAll('button')].forEach(btn => {
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('button').forEach(b=>b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      currentLayer = btn.dataset.layer;
+      refreshMapStyling();
+      buildLegend();
+    });
+  });
+
+  // 2) Dimming + dış kontur: birleşik aktif koşula göre (panel kategorisi + seçili ilçe).
+  refreshMapStyling();
+
+  // 3) Lejant, logolar, grafikler ve saha gözlem raporu (panel değişince drilldown sıfırlanır).
+  buildLegend();
+  renderGroupLogos(panel);
+  resetDonutDrill();
+  if (typeof updateCharts === 'function') updateCharts();
+  renderReport();
+}
+
+/* Harita stilini (renk/opaklık/kontur) mevcut panel + ilçe durumuna göre tazele. */
+function refreshMapStyling() {
+  if (!map || !map.getLayer(FILL)) return;
+  map.setPaintProperty(FILL, 'fill-color', colorExpression(currentLayer, activePanel));
+  map.setPaintProperty(FILL, 'fill-opacity', opacityExpression(activePanel));
+}
+
+/* ---- Aktif panel başlığında tematik grup logoları (iliski.json) ---- */
+function renderGroupLogos(panel) {
+  const box = document.getElementById('groupLogos');
+  if (!ILISKI) { box.hidden = true; return; }
+  const key = ILISKI_KEY[panel] || panel;
+  const files = ILISKI[key] || [];
+  if (!files.length) { box.innerHTML = '<span class="gl-label">Tematik grup yok</span>'; return; }
+  const base = (CONFIG.USE_LOCAL ? './Tematik Grup Logoları/' : `${RAW}/Tematik Grup Logoları/`);
+  box.innerHTML =
+    '<span class="gl-label">Tematik gruplar</span>' +
+    files.map(f => {
+      const name = f.replace(/\.png$/i,'');
+      const src = encodeURI(base + f);
+      return `<img class="logo-img" src="${src}" alt="${name}" title="${name}" loading="lazy">`;
+    }).join('');
+  box.hidden = false;
+}
+
+/* ---- Saha Gözlem Raporu (ilce_aciklama.json) — seçili ilçe + aktif panel metni ----
+   İlçe filtresine duyarlı. İlçe yoksa ya da metin boşsa boş-durum gösterilir. */
+function renderReport() {
+  const body = document.getElementById('reportBody');
+  const meta = document.getElementById('reportMeta');
+
+  // İlçe seçilmemişse: yönlendirici boş-durum.
+  if (!STATE.ilce) {
+    meta.textContent = 'İlçe seçilmedi';
+    body.className = 'report-body is-empty';
+    body.innerHTML = `<div class="report-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>Saha gözlem raporunu görmek için<br>soldan bir <b>ilçe</b> seçin.</span>
+      </div>`;
+    return;
+  }
+
+  meta.textContent = `${STATE.ilce} · ${activePanel}`;
+
+  // Veri henüz gelmemişse.
+  if (!ACIKLAMA) {
+    body.className = 'report-body is-empty';
+    body.innerHTML = `<div class="report-placeholder"><span>Saha gözlem verisi yüklenemedi.</span></div>`;
+    return;
+  }
+
+  // ilce_aciklama panel anahtarı dashboard adından farklı olabilir (köprüle).
+  const key = ILISKI_KEY[activePanel] || activePanel;
+  // İlçe anahtarı title-case ("Küçükçekmece"), STATE.ilce büyük harf ("KÜÇÜKÇEKMECE").
+  // Türkçe büyük-harf normalize ederek case-insensitive eşle.
+  const ilceRec = ACIKLAMA[STATE.ilce] || ACIKLAMA[aciklamaIlceKey(STATE.ilce)] || {};
+  const txt = (ilceRec[key] || '').trim();
+
+  if (!txt) {
+    body.className = 'report-body is-empty';
+    body.innerHTML = `<div class="report-placeholder">
+        <span><b>${STATE.ilce}</b> için <b>${activePanel}</b> panelinde
+        saha gözlem raporu henüz girilmemiştir.</span>
+      </div>`;
+    return;
+  }
+
+  // Metni paragraflara böl (çift satır sonu → paragraf).
+  body.className = 'report-body';
+  const paras = txt.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+  body.innerHTML = paras.map(p => `<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');
+}
+
+// Basit HTML kaçışı (serbest metin güvenliği).
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ACIKLAMA ilçe anahtarını büyük-harf normalize ederek eşle (title-case ↔ UPPER).
+let _aciklamaKeyMap = null;
+function aciklamaIlceKey(ilce) {
+  if (!ACIKLAMA) return null;
+  if (!_aciklamaKeyMap) {
+    _aciklamaKeyMap = new Map();
+    for (const k of Object.keys(ACIKLAMA)) _aciklamaKeyMap.set(k.toLocaleUpperCase('tr'), k);
+  }
+  return _aciklamaKeyMap.get((ilce||'').toLocaleUpperCase('tr')) || null;
+}
+
+/* =========================================================================
+   FİLTRELEME & DURUM — ilçe→mahalle kademeli. İlçe: harita odak + vurgu.
+   Mahalle: yalnız yakınlaştırma/vurgu (agregasyonu değiştirmez).
+   ========================================================================= */
+const emptyFC = () => ({ type:'FeatureCollection', features:[] });
+const ilceSel = document.getElementById('selIlce');
+const mahSel  = document.getElementById('selMahalle');
+
+function initFilters() {
+  const adlar = ILCE_DATA.features.map(f => f.properties.AD)
+    .sort((a,b) => a.localeCompare(b,'tr'));
+  ilceSel.innerHTML = '<option value="">Tümü</option>' +
+    adlar.map(a => `<option value="${a}">${titleCaseTr(a)}</option>`).join('');
+  ilceSel.disabled = false;
+  mahSel.disabled = true;
+  mahSel.innerHTML = '<option value="">Tümü</option>';
+
+  ilceSel.addEventListener('change', () => onIlceChange(ilceSel.value || null));
+  mahSel .addEventListener('change', () => onMahalleChange(mahSel.value || null));
+  document.querySelector('.btn-reset').addEventListener('click', resetFilters);
+}
+
+// İlçe adları BÜYÜK harf; görünümde okunur başlık biçimi.
+function titleCaseTr(s) {
+  return s.toLocaleLowerCase('tr').replace(/(^|[\s\-\/])([a-zçğıöşü])/g,
+    (m,sep,ch) => sep + ch.toLocaleUpperCase('tr'));
+}
+
+function ilceFeature(ad) {
+  return ILCE_DATA.features.find(f => f.properties.AD === ad);
+}
+
+async function onIlceChange(ad, opts={}) {
+  STATE.ilce = ad;
+  STATE.mahalle = null;
+
+  if (!ad) {
+    setHighlight(B_ILCE_HL, emptyFC());
+    setHighlight(B_MAH_HL, emptyFC());
+    mahSel.disabled = true;
+    mahSel.innerHTML = '<option value="">Tümü</option>';
+    refreshMapStyling();   // ilçe koşulu kalktı; dimming'i tazele
+    if (!opts.silent) map.fitBounds(ISTANBUL_BOUNDS || boundsOf(ILCE_DATA), { padding:30, duration:600 });
+    syncFilterUI(); writeHash();
+    document.dispatchEvent(new CustomEvent('dak:filter', { detail:{...STATE} }));
+    return;
+  }
+
+  const feat = ilceFeature(ad);
+  if (feat) {
+    setHighlight(B_ILCE_HL, { type:'FeatureCollection', features:[feat] });
+    setHighlight(B_MAH_HL, emptyFC());
+    if (!opts.silent) {
+      const b = boundsOf({ features:[feat] });
+      if (b) map.fitBounds(b, { padding:40, duration:600 });
+    }
+  }
+  refreshMapStyling();   // seçili ilçe içi tam renk, dışı soluk (dimming)
+  syncFilterUI(); writeHash();   // hash'i hemen yaz (mahalle yüklemesini bekleme)
+  document.dispatchEvent(new CustomEvent('dak:filter', { detail:{...STATE} }));
+
+  // Mahalle dropdown'unu doldur (sinir_mahalle lazy yüklenir).
+  mahSel.disabled = true;
+  mahSel.innerHTML = '<option value="">Yükleniyor…</option>';
+  try { await ensureMahalleData(); populateMahalle(ad); }
+  catch(e){ mahSel.innerHTML = '<option value="">Mahalle yüklenemedi</option>'; }
+}
+
+// sinir_mahalle (17MB) yalnız ilk ilçe seçiminde bir kez yüklenir.
+function ensureMahalleData() {
+  if (MAHALLE_DATA) return Promise.resolve();
+  if (MAHALLE_LOADING) return MAHALLE_LOADING;
+  MAHALLE_LOADING = (async () => {
+    const mah = await fetchJSON(url('sinir_mahalle'));
+    KIMLIK2AD = {};
+    for (const f of ILCE_DATA.features) KIMLIK2AD[f.properties.KIMLIKNO] = f.properties.AD;
+    // ILCEKN -> KIMLIKNO -> ilçe adı çözümü her mahalleye eklenir.
+    for (const f of mah.features) f.properties._ilce = KIMLIK2AD[f.properties.ILCEKN] || null;
+    MAHALLE_DATA = mah;
+  })();
+  return MAHALLE_LOADING;
+}
+
+function mahalleFeaturesOf(ilceAd) {
+  if (!MAHALLE_DATA) return [];
+  return MAHALLE_DATA.features.filter(f => f.properties._ilce === ilceAd);
+}
+
+function populateMahalle(ilceAd) {
+  const feats = mahalleFeaturesOf(ilceAd)
+    .sort((a,b) => a.properties.AD.localeCompare(b.properties.AD,'tr'));
+  mahSel.innerHTML = '<option value="">Tümü</option>' +
+    feats.map(f => `<option value="${f.properties.AD}">${titleCaseTr(f.properties.AD)}</option>`).join('');
+  mahSel.disabled = feats.length === 0;
+}
+
+function onMahalleChange(ad, opts={}) {
+  STATE.mahalle = ad;
+  if (!ad) {
+    setHighlight(B_MAH_HL, emptyFC());
+    const f = STATE.ilce && ilceFeature(STATE.ilce);
+    if (f && !opts.silent) { const b=boundsOf({features:[f]}); if(b) map.fitBounds(b,{padding:40,duration:500}); }
+    syncFilterUI(); writeHash();
+    return;
+  }
+  const feat = mahalleFeaturesOf(STATE.ilce).find(f => f.properties.AD === ad);
+  if (feat) {
+    // Mahalle = yalnız yakınlaştırma + vurgu (şartname kararı).
+    setHighlight(B_MAH_HL, { type:'FeatureCollection', features:[feat] });
+    if (!opts.silent) { const b=boundsOf({features:[feat]}); if(b) map.fitBounds(b,{padding:50,duration:600}); }
+  }
+  syncFilterUI(); writeHash();
+}
+
+function resetFilters() {
+  STATE.ilce = null; STATE.mahalle = null;
+  ilceSel.value = ''; mahSel.value = '';
+  mahSel.disabled = true; mahSel.innerHTML = '<option value="">Tümü</option>';
+  setHighlight(B_ILCE_HL, emptyFC());
+  setHighlight(B_MAH_HL, emptyFC());
+  refreshMapStyling();   // dimming'i temizle (yalnız panel koşulu kalır)
+  map.fitBounds(ISTANBUL_BOUNDS || boundsOf(ILCE_DATA), { padding:30, duration:600 });
+  writeHash();
+  document.dispatchEvent(new CustomEvent('dak:filter', { detail:{...STATE} }));
+}
+
+function setHighlight(layerId, fc) {
+  const src = map.getSource(layerId);
+  if (src) src.setData(fc);
+}
+
+// Dropdown değerlerini STATE ile eşitle (hash'ten geri yükleme için).
+function syncFilterUI() {
+  if (ilceSel.value !== (STATE.ilce || '')) ilceSel.value = STATE.ilce || '';
+  if (mahSel.value  !== (STATE.mahalle || '')) mahSel.value = STATE.mahalle || '';
+}
+
+/* ---- URL hash'ten durumu uygula (ilk yükleme + geri/ileri) ---- */
+async function applyHashOnLoad() {
+  const h = readHash();
+  if (h.panel && SLUG_PANEL[h.panel]) {
+    const idx = PANELS.indexOf(SLUG_PANEL[h.panel]);
+    if (idx >= 0 && PANELS[idx] !== STATE.panel) selectPanel(idx);
+  }
+  if (h.ilce) {
+    await onIlceChange(h.ilce);
+    if (h.mahalle) onMahalleChange(h.mahalle);
+  }
+}
+
+// Tarayıcı geri/ileri ile hash değişince durumu uygula.
+window.addEventListener('hashchange', () => {
+  if (_hashWriting) return;   // kendi yazdığımız değişikliği yok say
+  applyHashOnLoad();
+});
+
+/* ---- Lejant: yalnız veride FİİLEN bulunan sınıflar; alana göre sıralı ----
+   Daraltılmış: top-N + "Diğer". Genişletilmiş: tüm sınıflar. */
+let _featuresCache = null;
+let legendCollapsed = true;        // varsayılan: kapalı (yalnız başlık). Kullanıcı açabilir.
+
+function buildLegend(fc) {
+  if (fc) _featuresCache = fc;
+  if (!_featuresCache) return;
+  const L = LAYERS[currentLayer];
+  const field = L.field;
+  const isActive = activePredicate(activePanel);
+
+  const areaByCode = new Map();
+  for (const f of _featuresCache.features) {
+    const p = f.properties;
+    if (!isActive(p)) continue;
+    const raw = p[field];
+    if (raw === undefined || raw === null || String(raw).trim()==='') continue;
+    const code = String(raw);
+    const a = Number(p.Shape_Area) || 0;
+    areaByCode.set(code, (areaByCode.get(code)||0)+a);
+  }
+  let items = [...areaByCode.entries()]
+    .map(([code,area]) => ({ code, area,
+        label: labelOf(L.dom, code),
+        hex: L.override ? altHex(code, activePanel) : hexOf(L.dom, code) }))
+    .sort((a,b) => b.area - a.area);
+
+  const total = items.length;
+  // İki mod: AÇIK → tüm sınıflar; KAPALI → gövde gizli (yalnız başlık).
+  document.getElementById('legendTitle').textContent = legendTitleFor(currentLayer);
+  document.getElementById('legendCount').textContent = total ? `${total} sınıf` : 'veri yok';
+  const body = document.getElementById('legendBody');
+  body.innerHTML = items.map(it =>
+    `<div class="legend-item">
+       <span class="legend-sw" style="background:${it.hex}"></span>
+       <span class="legend-label" title="${it.label}">${it.label}</span>
+     </div>`).join('') || '<div class="legend-empty">Bu panelde gösterilecek sınıf yok.</div>';
+
+  document.getElementById('legend').classList.toggle('collapsed', legendCollapsed);
+  document.getElementById('legend').hidden = false;
+}
+
+function legendTitleFor(layerKey) {
+  const m = { alt:'Alt Kullanım', orta:'Orta Kullanım', ana:'Ana Kullanım',
+             konut:'Konut Detayı', nace:'NACE Faaliyeti', sosyal:'Kamu / Özel' };
+  return m[layerKey] || LAYERS[layerKey].label;
+}
+
+/* =========================================================================
+   GRAFİKLER (ECharts) — panel başına donut + sütun. Veri: yüklenen parseller
+   (DAK_FC) üzerinden alan (Shape_Area) bazlı agregasyon. PMTiles + dak_ozet.json
+   geldiğinde kaynak özet JSON'a çevrilecek (aggregateField'ı besleyen tek nokta).
+   Renk: panel-renk kuralı (alt'ta panel override). Filtreye duyarlı (panel+ilçe).
+   ========================================================================= */
+let DAK_FC = null;
+let donutChart = null, barChart = null;
+let donutDrill = [];               // [] ana, [anaCode] orta, [anaCode,ortaCode] alt (Genel Bakış)
+const CHART_TOPN = 10;
+
+/* Panel → donut + sütun alan/etiket tanımları (şartname matrisi). */
+const CHART_CONFIG = {
+  "Genel Bakış":                   { donut:{field:'ana_kullanim',dom:'ana',drill:true}, bar:{field:'kent_kir',title:'Kentsel / Kırsal Dağılım'} },
+  "Konut Alanları":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_konut',dom:'detay_konut',title:'Konut Detayı Dağılımı'} },
+  "Çalışma Alanları":              { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'nacekodu',dom:'nace',title:'NACE Faaliyeti Dağılımı'} },
+  "Kentsel Açık ve Yeşil Alanlar": { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu / Özel Dağılımı'} },
+  "Sosyal Altyapı":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu / Özel Dağılımı'} },
+  "Doğal Nitelikli Alanlar":       { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
+  "Ulaşım ve Altyapı":             { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
+  "Su Yüzeyleri":                  { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
+  "Diğer Alanlar":                 { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
+};
+
+function initCharts() {
+  if (typeof echarts === 'undefined') return;   // CDN gelmediyse grafikler atlanır
+  donutChart = echarts.init(document.getElementById('donutChart'));
+  barChart   = echarts.init(document.getElementById('barChart'));
+  // Donut dilimine tıklama → drilldown (yalnız Genel Bakış hiyerarşisinde).
+  donutChart.on('click', (p) => {
+    const cfg = CHART_CONFIG[activePanel];
+    if (!cfg.donut.drill || !p.data || p.data.code === '_other') return;
+    if (donutDrill.length < 2) { donutDrill.push(p.data.code); updateCharts(); }
+  });
+  document.getElementById('donutBack').addEventListener('click', () => {
+    donutDrill.pop(); updateCharts();
+  });
+  // Pencere yeniden boyutlanınca grafikler uyum sağlar.
+  window.addEventListener('resize', () => { donutChart && donutChart.resize(); barChart && barChart.resize(); });
+  // İlçe/mahalle filtresi değişince grafikler ve rapor tepki verir.
+  document.addEventListener('dak:filter', () => { updateCharts(); renderReport(); });
+  // Tema değişince grafikler tema-duyarlı renklerle yeniden çizilir.
+  new MutationObserver(() => { if (dataLoaded) updateCharts(); })
+    .observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+}
+
+/* CSS değişkenlerinden tema-duyarlı grafik renkleri. */
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function chartTextColors() {
+  return { text: cssVar('--ink-2') || '#4A5358', faint: cssVar('--ink-3') || '#828D93',
+           line: cssVar('--line') || '#E3E7E9' };
+}
+
+/* Alan formatı: hektar (ha). 1 ha = 10.000 m². */
+function fmtArea(m2) {
+  const ha = m2 / 1e4;
+  if (ha >= 100)  return ha.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ha';
+  if (ha >= 1)    return ha.toLocaleString('tr-TR',{maximumFractionDigits:1}) + ' ha';
+  return ha.toLocaleString('tr-TR',{maximumFractionDigits:2}) + ' ha';
+}
+
+/* Aktif filtreye (panel kategorisi + seçili ilçe) uyan parselleri döndür.
+   drillCond: donut drilldown için ek koşul (ana/orta sınırlaması). */
+function filteredFeatures(extra) {
+  if (!DAK_FC) return [];
+  const isActive = activePredicate(activePanel);
+  return DAK_FC.features.filter(f => {
+    const p = f.properties;
+    if (!isActive(p)) return false;
+    if (extra && !extra(p)) return false;
+    return true;
+  });
+}
+
+/* Bir alanı alan (Shape_Area) bazında topla → sıralı {code,label,value,hex}. */
+function aggregateField(features, field, opt={}) {
+  const m = new Map();
+  for (const f of features) {
+    const raw = f.properties[field];
+    if (raw === undefined || raw === null || String(raw).trim()==='') continue;
+    const code = String(raw);
+    m.set(code, (m.get(code)||0) + (Number(f.properties.Shape_Area)||0));
+  }
+  const labelFor = (code) => {
+    if (opt.dom) return labelOf(opt.dom, code);
+    if (field === 'ilce_adi') return titleCaseTr(code);
+    return code;                       // kent_kir gibi serbest string
+  };
+  const colorFor = (code) => {
+    if (opt.override) return altHex(code, activePanel);
+    if (opt.dom) return hexOf(opt.dom, code);
+    if (field === 'kent_kir') return code === 'Kentsel' ? '#00929F' : '#9AAEB0';
+    return '#5B7E84';                  // ilçe vb. tek marka tonu
+  };
+  return [...m.entries()]
+    .map(([code,value]) => ({ code, value, label: labelFor(code), hex: colorFor(code) }))
+    .sort((a,b) => b.value - a.value);
+}
+
+/* Top-N + "Diğer" indir (grafik kalabalığını önler). */
+function topNWithOther(items, n) {
+  if (items.length <= n) return items.slice();
+  const head = items.slice(0, n);
+  const tailSum = items.slice(n).reduce((s,i)=>s+i.value, 0);
+  head.push({ code:'_other', label:`Diğer (${items.length-n})`, value:tailSum, hex:'#C9D1D4' });
+  return head;
+}
+
+function updateCharts() {
+  if (!donutChart || !barChart || !DAK_FC) return;
+  const cfg = CHART_CONFIG[activePanel];
+  renderDonut(cfg.donut);
+  renderBar(cfg.bar);
+}
+
+/* ---- DONUT ---- */
+function renderDonut(dcfg) {
+  const backBtn = document.getElementById('donutBack');
+  const titleEl = document.getElementById('donutTitle');
+
+  // Drilldown yalnız Genel Bakış (ana→orta→alt). Diğer panellerde donutDrill boş.
+  let field = dcfg.field, dom = dcfg.dom, override = dcfg.override, extra = null, titleText;
+  if (dcfg.drill && donutDrill.length === 1) {
+    field='orta_kullanim'; dom='orta'; override=false;
+    extra = (p) => String(p.ana_kullanim) === donutDrill[0];
+    titleText = `${labelOf('ana', donutDrill[0])} · Orta Kullanım`;
+  } else if (dcfg.drill && donutDrill.length === 2) {
+    field='alt_kullanim'; dom='alt'; override=true;
+    extra = (p) => String(p.orta_kullanim) === donutDrill[1];
+    titleText = `${labelOf('orta', donutDrill[1])} · Alt Kullanım`;
+  } else {
+    titleText = ({ana_kullanim:'Ana Kullanım', alt_kullanim:'Alt Kullanım'}[field] || 'Dağılım') + ' Dağılımı';
+  }
+  backBtn.hidden = !(dcfg.drill && donutDrill.length > 0);
+  titleEl.textContent = titleText;
+
+  const feats = filteredFeatures(extra);
+  let items = aggregateField(feats, field, { dom, override });
+  const total = items.reduce((s,i)=>s+i.value,0);
+  items = topNWithOther(items, CHART_TOPN);
+
+  const tc = chartTextColors();
+  if (!items.length) { donutChart.clear(); showChartEmpty('donutChart'); return; }
+  hideChartEmpty('donutChart');
+
+  donutChart.setOption({
+    tooltip: { trigger:'item',
+      formatter: (p) => `${p.data.label}<br/><b>${fmtArea(p.data.value)}</b> · %${p.percent}` },
+    series: [{
+      type:'pie', radius:['52%','78%'], center:['50%','50%'],
+      avoidLabelOverlap:true, minAngle:3,
+      itemStyle:{ borderColor: cssVar('--surface')||'#fff', borderWidth:1.5 },
+      label:{ show:false }, labelLine:{ show:false },
+      data: items.map(it => ({ value:it.value, name:it.label, code:it.code,
+                               label:it.label, itemStyle:{color:it.hex} })),
+    }],
+    graphic: [{ type:'text', left:'center', top:'center', style:{
+      text: `${items.length}${items.some(i=>i.code==='_other')?'+':''} sınıf\n${fmtArea(total)}`,
+      textAlign:'center', fill: tc.faint, fontSize:11, lineHeight:15, fontFamily:'Inter' } }]
+  }, true);
+}
+
+/* ---- SÜTUN (yatay bar, top-N) ---- */
+function renderBar(bcfg) {
+  document.getElementById('barTitle').textContent = bcfg.title;
+  const feats = filteredFeatures();
+  let items = aggregateField(feats, bcfg.field, { dom: bcfg.dom });
+  items = topNWithOther(items, CHART_TOPN);
+
+  if (!items.length) { barChart.clear(); showChartEmpty('barChart'); return; }
+  hideChartEmpty('barChart');
+
+  // Yatay bar: en büyük üstte okunur → ters çevir.
+  const data = items.slice().reverse();
+  const tc = chartTextColors();
+  barChart.setOption({
+    grid: { left:6, right:14, top:10, bottom:6, containLabel:true },
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'},
+      formatter: (ps) => { const d=ps[0]; return `${d.name}<br/><b>${fmtArea(d.value)}</b>`; } },
+    xAxis: { type:'value', axisLabel:{ color:tc.faint, fontSize:10,
+              formatter:(v)=> { const ha=v/1e4; return ha>=1000 ? (ha/1000).toFixed(0)+'B ha' : Math.round(ha)+' ha'; } },
+             splitLine:{ lineStyle:{ color:tc.line } }, axisLine:{show:false}, axisTick:{show:false} },
+    yAxis: { type:'category', data: data.map(d=>d.label),
+             axisLabel:{ color:tc.text, fontSize:11, fontFamily:'Inter',
+                         formatter:(v)=> v.length>16 ? v.slice(0,15)+'…' : v },
+             axisLine:{ lineStyle:{color:tc.line} }, axisTick:{show:false} },
+    series: [{ type:'bar', barMaxWidth:18,
+      data: data.map(d=>({ value:d.value, itemStyle:{ color:d.hex, borderRadius:[0,2,2,0] } })),
+    }]
+  }, true);
+}
+
+function showChartEmpty(id) {
+  const host = document.getElementById(id).parentElement;
+  if (host.querySelector('.chart-empty')) return;
+  const d = document.createElement('div');
+  d.className = 'chart-empty';
+  d.textContent = 'Bu seçim için veri yok.';
+  host.appendChild(d);
+}
+function hideChartEmpty(id) {
+  const e = document.getElementById(id).parentElement.querySelector('.chart-empty');
+  if (e) e.remove();
+}
+
+// Panel değişince drilldown sıfırlanır.
+function resetDonutDrill() { donutDrill = []; }
+
+
+/* ---- Poligon popup'ı: tıklamada öznitelikleri domain etiketiyle göster ---- */
+function wirePopup() {
+  map.on('click', FILL, (e) => {
+    const f = e.features && e.features[0]; if (!f) return;
+    const p = f.properties;
+    const swatch = altHex(p.alt_kullanim, activePanel);
+    const areaTxt = fmtArea(Number(p.Shape_Area) || 0);
+
+    const rows = [];
+    const add = (k,v) => { if (v!==undefined && v!==null && String(v).trim()!=='' ) rows.push(`<div class="pp-row"><span class="pp-k">${k}</span><span class="pp-v">${v}</span></div>`); };
+    add('Ana', labelOf('ana', p.ana_kullanim));
+    add('Orta', labelOf('orta', p.orta_kullanim));
+    add('Alt', labelOf('alt', p.alt_kullanim));
+    if (p.detay_konut)        add('Konut det.',   labelOf('detay_konut', p.detay_konut));
+    if (p.detay_ticaret)      add('Ticaret det.', labelOf('detay_ticaret', p.detay_ticaret));
+    if (p.detay_sosyalaltyapi)add('Sosyal det.',  labelOf('detay_sosyal', p.detay_sosyalaltyapi));
+    if (p.detay_resmi)        add('Resmi det.',   labelOf('detay_resmi', p.detay_resmi));
+    if (p.nacekodu)           add('NACE', labelOf('nace', p.nacekodu));
+    add('İlçe', p.ilce_adi);
+    add('Alan', areaTxt);
+
+    const title = (p.ad && String(p.ad).trim()) ? p.ad : labelOf('alt', p.alt_kullanim);
+    const note = (p.not_ && String(p.not_).trim()) ? `<div class="pp-note">${p.not_}</div>` : '';
+
+    const html =
+      `<div class="pp">
+         <div class="pp-head">
+           <span class="pp-swatch" style="background:${swatch}"></span>
+           <span class="pp-title">${title}</span>
+           <div class="pp-sub">${p.ilce_adi||''} · ${p.kent_kir||''}</div>
+         </div>
+         <div class="pp-body">${rows.join('')}${note}</div>
+       </div>`;
+
+    new maplibregl.Popup({ closeButton:true, maxWidth:'260px' })
+      .setLngLat(e.lngLat).setHTML(html).addTo(map);
+  });
+  map.on('mouseenter', FILL, () => map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave', FILL, () => map.getCanvas().style.cursor='');
+}
+
+// Tema değişince sınır çizgi renkleri de tazelenir.
+const themeObserver = new MutationObserver(() => {
+  if (!map || !dataLoaded) return;
+  try {
+    map.setPaintProperty(B_KK,'line-color', themeLineSoft());
+    map.setPaintProperty(B_ILCE,'line-color', themeLineStrong());
+    // Dimming rengi temaya bağlı; fill ifadesini yeniden uygula.
+    map.setPaintProperty(FILL, 'fill-color', colorExpression(currentLayer, activePanel));
+  } catch(e){}
+});
+themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] });
+
+/* =========================================================================
+   BAŞLAT — domain önce (renkler ona bağlı), sonra harita.
+   ========================================================================= */
+(async function start() {
+  try {
+    const [domain, iliski, aciklama] = await Promise.all([
+      fetchJSON(url('domain')),
+      fetchJSON(url('iliski')).catch(() => null),        // logolar opsiyonel
+      fetchJSON(url('ilce_aciklama')).catch(() => null), // saha gözlem metinleri opsiyonel
+    ]);
+    buildLookups(domain);
+    ILISKI = iliski;
+    ACIKLAMA = aciklama;
+    renderGroupLogos(activePanel);
+    // Header logosu (İstanbul Plan 2050).
+    const logoBase = CONFIG.USE_LOCAL ? './Tematik Grup Logoları/' : `${RAW}/Tematik Grup Logoları/`;
+    document.getElementById('brandMark').innerHTML =
+      `<img src="${encodeURI(logoBase + 'İstanbul Plan 2050 Logo.png')}" alt="İstanbul Plan 2050">`;
+    renderReport();
+  } catch (e) {
+    console.error('Domain yüklenemedi:', e);
+    showStatus("Domain verisi yüklenemedi.", true);
+    return;
+  }
+  initAuth();
+  initMap();
+
+  // Lejant aç/kapa (tüm sınıflar ↔ kapalı).
+  document.getElementById('legendExpand').addEventListener('click', () => {
+    legendCollapsed = !legendCollapsed;
+    buildLegend();
+  });
+
+  // ---- Modaller (Metodoloji / Hakkında) ----
+  initModals();
+})();
+
+/* =========================================================================
+   MODALLER — erişilebilir aç/kapa: ESC, overlay tıklama, odak yönetimi.
+   ========================================================================= */
+function initModals() {
+  let lastFocused = null;
+
+  function openModal(id) {
+    const ov = document.getElementById(id);
+    if (!ov) return;
+    lastFocused = document.activeElement;
+    ov.hidden = false;
+    // reflow → geçiş animasyonu tetiklensin
+    void ov.offsetWidth;
+    ov.classList.add('open');
+    // Odak modal içine taşınır (klavye erişimi). Kısa gecikme, hidden kaldırıldıktan
+    // sonra elemanın güvenilir şekilde odaklanabilir olmasını sağlar.
+    const focusable = ov.querySelector('.modal-close, button, a, [tabindex]');
+    if (focusable) setTimeout(() => focusable.focus(), 30);
+    document.addEventListener('keydown', onKey);
+  }
+
+  function closeModal(ov) {
+    ov.classList.remove('open');
+    document.removeEventListener('keydown', onKey);
+    // Geçiş bitince DOM'dan gizle.
+    const done = () => { ov.hidden = true; ov.removeEventListener('transitionend', done); };
+    ov.addEventListener('transitionend', done);
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') {
+      const open = document.querySelector('.modal-overlay.open');
+      if (open) closeModal(open);
+    }
+  }
+
+  document.getElementById('btnMetodoloji')?.addEventListener('click', () => openModal('modalMetodoloji'));
+  document.getElementById('btnHakkinda')?.addEventListener('click', () => openModal('modalHakkinda'));
+
+  // Kapat: çarpı butonu veya overlay boşluğuna tıklama.
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => {
+      if (e.target === ov || e.target.hasAttribute('data-close')) closeModal(ov);
+    });
+  });
+}
+</script>
+</body>
+</html>
