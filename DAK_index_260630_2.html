@@ -256,6 +256,64 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn-reset:hover { border-color: var(--brand); color: var(--brand); }
 
+/* ---- Çoklu seçim (İlçe/Mahalle) — native select'in yerini alır ---- */
+.msel { position: relative; }
+.msel-btn {
+  appearance: none; -webkit-appearance: none; width: 100%; height: 34px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 10px 0 11px; font-family: inherit; font-size: 13px; text-align: left;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r); cursor: pointer;
+  transition: border-color .15s;
+}
+.msel-btn:hover { border-color: var(--ink-3); }
+.msel-btn:disabled { cursor: not-allowed; opacity: .55; }
+.msel-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel-value.is-placeholder { color: var(--ink-3); }
+.msel-caret {
+  width: 7px; height: 7px; flex: none; margin-top: -2px;
+  border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(45deg); transition: transform .15s;
+}
+.msel.open .msel-caret { transform: rotate(225deg); margin-top: 3px; }
+
+.msel-panel {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: 0 12px 32px rgba(16,25,28,.18);
+  display: flex; flex-direction: column; max-height: 320px;
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+}
+.msel.open .msel-panel { opacity: 1; visibility: visible; transform: translateY(0); }
+.msel-search-wrap { padding: 8px; border-bottom: 1px solid var(--line-2); flex: none; }
+.msel-search {
+  width: 100%; height: 30px; padding: 0 9px; font-family: inherit; font-size: 12.5px;
+  color: var(--ink); background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r);
+}
+.msel-search:focus { outline: none; border-color: var(--brand); }
+.msel-list { overflow-y: auto; padding: 4px; flex: 1; min-height: 0; }
+.msel-opt {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: var(--r); font-size: 12.5px; color: var(--ink);
+  cursor: pointer; user-select: none;
+}
+.msel-opt:hover { background: var(--bg); }
+.msel-opt input {
+  width: 14px; height: 14px; flex: none; accent-color: var(--brand); cursor: pointer;
+}
+.msel-opt .msel-sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.msel-opt-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel-empty { padding: 16px 10px; text-align: center; font-size: 12px; color: var(--ink-3); }
+.msel-foot { display: flex; border-top: 1px solid var(--line-2); flex: none; }
+.msel-foot button {
+  flex: 1; height: 32px; font-family: inherit; font-size: 12px; font-weight: 500;
+  background: transparent; border: none; color: var(--ink-2);
+  transition: background-color .15s, color .15s;
+}
+.msel-foot button:hover { background: var(--bg); color: var(--brand); }
+.msel-foot button + button { border-left: 1px solid var(--line-2); }
+
 /* ---- İçerik sütunu ---- */
 .content { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 
@@ -534,12 +592,12 @@ button { font-family: inherit; cursor: pointer; }
     <div class="rail-section rail-filter">
       <div class="rail-label">Filtre</div>
       <div class="filter-field">
-        <label class="field-label" for="selIlce">İlçe</label>
-        <div class="select"><select id="selIlce" disabled><option>Tümü</option></select></div>
+        <label class="field-label" id="lblIlce">İlçe</label>
+        <div class="msel" id="selIlce" aria-labelledby="lblIlce"></div>
       </div>
       <div class="filter-field">
-        <label class="field-label" for="selMahalle">Mahalle</label>
-        <div class="select"><select id="selMahalle" disabled><option>Tümü</option></select></div>
+        <label class="field-label" id="lblMahalle">Mahalle</label>
+        <div class="msel" id="selMahalle" aria-labelledby="lblMahalle"></div>
       </div>
       <button class="btn-reset" type="button">Sıfırla</button>
     </div>
@@ -734,6 +792,7 @@ const CONFIG = {
     domain:             `${RAW}/data/domain.json`,
     iliski:             `${RAW}/data/iliski.json`,
     ilce_aciklama:      `${RAW}/data/ilce_aciklama.json`,
+    ilce_renk:          `${RAW}/ilce_tabela_renkleri.json`,
   },
   local: {
     detayli_ak_json:    "./detayli_ak.json",
@@ -744,6 +803,7 @@ const CONFIG = {
     domain:             "./data/domain.json",
     iliski:             "./data/iliski.json",
     ilce_aciklama:      "./data/ilce_aciklama.json",
+    ilce_renk:          "./ilce_tabela_renkleri.json",
   },
 
   // CartoDB raster altlık — temaya göre seçilir (brief: CartoDB light_all).
@@ -777,7 +837,7 @@ const PANELS = [
    GLOBAL DURUM — tek doğruluk kaynağı. Harita, grafik (Modül 5), metin
    (Modül 6) bu state'e tepki verir. URL hash ile paylaşılabilir.
    ========================================================================= */
-const STATE = { panel: PANELS[0], ilce: null, mahalle: null };
+const STATE = { panel: PANELS[0], ilce: [], mahalle: [] };
 // Eski kod uyumluluğu için activePanel'i STATE.panel'e bağlı tut.
 let activePanel = STATE.panel;
 
@@ -794,8 +854,8 @@ let _hashWriting = false;
 function writeHash() {
   _hashWriting = true;
   const parts = [`panel=${PANEL_SLUG[STATE.panel]}`];
-  if (STATE.ilce)    parts.push(`ilce=${encodeURIComponent(STATE.ilce)}`);
-  if (STATE.mahalle) parts.push(`mahalle=${encodeURIComponent(STATE.mahalle)}`);
+  if (STATE.ilce.length)    parts.push(`ilce=${STATE.ilce.map(encodeURIComponent).join(',')}`);
+  if (STATE.mahalle.length) parts.push(`mahalle=${STATE.mahalle.map(encodeURIComponent).join(',')}`);
   location.hash = parts.join('&');
   setTimeout(()=>{ _hashWriting=false; }, 0);
 }
@@ -908,6 +968,28 @@ function altHex(code, panel) {
   const ov = DOM.panelAlt[panel];
   const key = String(code);
   return (ov && ov.has(key) ? ov.get(key).hex : DOM.alt.get(key)?.hex) ?? "#C9D1D4";
+}
+
+/* =========================================================================
+   İLÇE TABELA RENKLERİ — İBB sokak tabelası renk şeması (2007, Köksal & Erkmen).
+   Kaynak veri title-case + bazı harflerde inceltme işareti (â) içerir; ilçe
+   sınırı/parsel verisindeki ilce_adi BÜYÜK HARF ve işaretsizdir. Eşleşme için
+   ikisi de aynı normalize fonksiyonundan geçirilir. ========================= */
+let ILCE_RENK = null;   // normalize(ilce adı) -> hex
+function normalizeIlceName(s) {
+  return String(s||'').trim()
+    .replace(/[âÂ]/g,'a').replace(/[îÎ]/g,'i').replace(/[ûÛ]/g,'u')
+    .toLocaleUpperCase('tr');
+}
+function buildIlceRenkLookup(data) {
+  ILCE_RENK = new Map();
+  for (const it of (data && data.ilceler) || []) {
+    ILCE_RENK.set(normalizeIlceName(it.ilce), it.hex);
+  }
+}
+// ilce_adi (BÜYÜK harf, veri formatı) -> tabela rengi; bulunamazsa marka tonu.
+function ilceHex(ad) {
+  return (ILCE_RENK && ILCE_RENK.get(normalizeIlceName(ad))) || '#5B7E84';
 }
 
 /* =========================================================================
@@ -1041,11 +1123,12 @@ function panelAltCodeSet(panel) {
 function activePredicate(panel, includeIlce=true) {
   const set = panelAltCodeSet(panel);
   const ana = PANEL_CONFIG[panel]?.ana || null;
-  const ilce = includeIlce ? STATE.ilce : null;
+  const ilceList = includeIlce ? STATE.ilce : [];
+  const ilceSet = ilceList.length ? new Set(ilceList) : null;
   return (p) => {
     if (set) { if (!set.has(String(p.alt_kullanim))) return false; }
     else if (ana) { if (p.ana_kullanim !== ana) return false; }
-    if (ilce && p.ilce_adi !== ilce) return false;
+    if (ilceSet && !ilceSet.has(p.ilce_adi)) return false;
     return true;
   };
 }
@@ -1061,7 +1144,8 @@ function activeCondition(panel) {
   } else if (panelAna) {
     conds.push(['==', ['get','ana_kullanim'], panelAna]);
   }
-  if (STATE.ilce) conds.push(['==', ['get','ilce_adi'], STATE.ilce]);
+  if (STATE.ilce.length === 1) conds.push(['==', ['get','ilce_adi'], STATE.ilce[0]]);
+  else if (STATE.ilce.length > 1) conds.push(['in', ['get','ilce_adi'], ['literal', STATE.ilce]]);
   if (conds.length === 0) return null;          // her şey aktif (Genel Bakış, ilçe yok)
   if (conds.length === 1) return conds[0];
   return ['all', ...conds];
@@ -1182,7 +1266,8 @@ function snapshotFilename() {
   const d = new Date();
   const tarih = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const parts = ['DAK', sad(activePanel)];
-  if (STATE.ilce) parts.push(sad(STATE.ilce));
+  if (STATE.ilce.length === 1) parts.push(sad(STATE.ilce[0]));
+  else if (STATE.ilce.length > 1) parts.push(`${STATE.ilce.length}Ilce`);
   parts.push(tarih);
   return parts.join('_') + '.png';
 }
@@ -1515,13 +1600,14 @@ function renderGroupLogos(panel) {
 }
 
 /* ---- Saha Gözlem Raporu (ilce_aciklama.json) — seçili ilçe + aktif panel metni ----
-   İlçe filtresine duyarlı. İlçe yoksa ya da metin boşsa boş-durum gösterilir. */
+   İlçe filtresine duyarlı; yalnız TEK ilçe seçiliyken üretilir (rapor metni
+   ilçe başına yazılmıştır, birden çok ilçe için anlamlı bir birleşim yoktur). */
 function renderReport() {
   const body = document.getElementById('reportBody');
   const meta = document.getElementById('reportMeta');
 
   // İlçe seçilmemişse: yönlendirici boş-durum.
-  if (!STATE.ilce) {
+  if (STATE.ilce.length === 0) {
     meta.textContent = 'İlçe seçilmedi';
     body.className = 'report-body is-empty';
     body.innerHTML = `<div class="report-placeholder">
@@ -1533,7 +1619,21 @@ function renderReport() {
     return;
   }
 
-  meta.textContent = `${STATE.ilce} · ${activePanel}`;
+  // Birden çok ilçe seçiliyken rapor tek ilçeye özgüdür; yönlendirici mesaj gösterilir.
+  if (STATE.ilce.length > 1) {
+    meta.textContent = `${STATE.ilce.length} ilçe seçili`;
+    body.className = 'report-body is-empty';
+    body.innerHTML = `<div class="report-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>Saha gözlem raporu yalnızca<br><b>tek bir ilçe</b> seçiliyken görüntülenir.</span>
+      </div>`;
+    return;
+  }
+
+  const ilce = STATE.ilce[0];
+  meta.textContent = `${ilce} · ${activePanel}`;
 
   // Veri henüz gelmemişse.
   if (!ACIKLAMA) {
@@ -1544,15 +1644,15 @@ function renderReport() {
 
   // ilce_aciklama panel anahtarı dashboard adından farklı olabilir (köprüle).
   const key = ILISKI_KEY[activePanel] || activePanel;
-  // İlçe anahtarı title-case ("Küçükçekmece"), STATE.ilce büyük harf ("KÜÇÜKÇEKMECE").
+  // İlçe anahtarı title-case ("Küçükçekmece"), ilce büyük harf ("KÜÇÜKÇEKMECE").
   // Türkçe büyük-harf normalize ederek case-insensitive eşle.
-  const ilceRec = ACIKLAMA[STATE.ilce] || ACIKLAMA[aciklamaIlceKey(STATE.ilce)] || {};
+  const ilceRec = ACIKLAMA[ilce] || ACIKLAMA[aciklamaIlceKey(ilce)] || {};
   const txt = (ilceRec[key] || '').trim();
 
   if (!txt) {
     body.className = 'report-body is-empty';
     body.innerHTML = `<div class="report-placeholder">
-        <span><b>${STATE.ilce}</b> için <b>${activePanel}</b> panelinde
+        <span><b>${ilce}</b> için <b>${activePanel}</b> panelinde
         saha gözlem raporu henüz girilmemiştir.</span>
       </div>`;
     return;
@@ -1581,24 +1681,178 @@ function aciklamaIlceKey(ilce) {
 }
 
 /* =========================================================================
-   FİLTRELEME & DURUM — ilçe→mahalle kademeli. İlçe: harita odak + vurgu.
-   Mahalle: yalnız yakınlaştırma/vurgu (agregasyonu değiştirmez).
+   ÇOKLU SEÇİM BİLEŞENİ — native <select>'in yerini alan, arama + onay kutulu
+   açılır panel. İlçe ve Mahalle filtreleri bu sınıftan iki ayrı örnek kurar.
+   ========================================================================= */
+class MultiSelect {
+  constructor(root, opts={}) {
+    this.root = root;
+    this.placeholder = opts.placeholder || 'Tümü';
+    this.onChange = opts.onChange || null;
+    this.items = [];          // [{value,label,color}]
+    this.selected = new Set();
+    this.filterText = '';
+    this._build(opts.searchPlaceholder || 'Ara…', opts.emptyText || 'Sonuç yok');
+  }
+  _build(searchPlaceholder, emptyText) {
+    this.emptyText = emptyText;
+    this.root.classList.add('msel');
+    this.root.innerHTML =
+      `<button type="button" class="msel-btn" disabled aria-haspopup="listbox" aria-expanded="false">
+         <span class="msel-value is-placeholder">${this.placeholder}</span>
+         <span class="msel-caret" aria-hidden="true"></span>
+       </button>
+       <div class="msel-panel" role="listbox" aria-multiselectable="true" hidden>
+         <div class="msel-search-wrap"><input type="text" class="msel-search" placeholder="${escapeHtml(searchPlaceholder)}"></div>
+         <div class="msel-list"></div>
+         <div class="msel-foot">
+           <button type="button" data-act="all">Tümünü Seç</button>
+           <button type="button" data-act="clear">Temizle</button>
+         </div>
+       </div>`;
+    this.btn      = this.root.querySelector('.msel-btn');
+    this.valueEl  = this.root.querySelector('.msel-value');
+    this.panel    = this.root.querySelector('.msel-panel');
+    this.searchEl = this.root.querySelector('.msel-search');
+    this.listEl   = this.root.querySelector('.msel-list');
+
+    this.btn.addEventListener('click', () => this.toggle());
+    this.searchEl.addEventListener('input', () => {
+      this.filterText = this.searchEl.value.trim().toLocaleLowerCase('tr');
+      this._renderList();
+    });
+    this.root.querySelector('[data-act="all"]').addEventListener('click', () => this._selectAllVisible());
+    this.root.querySelector('[data-act="clear"]').addEventListener('click', () => this.clear());
+    document.addEventListener('click', (e) => { if (!this.root.contains(e.target)) this.close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.root.classList.contains('open')) { this.close(); this.btn.focus(); }
+    });
+  }
+  // items: [{value,label,color?}]
+  setItems(items) {
+    this.items = items || [];
+    const valid = new Set(this.items.map(i => i.value));
+    for (const v of [...this.selected]) if (!valid.has(v)) this.selected.delete(v);
+    this._renderList();
+    this._renderButton();
+  }
+  setDisabled(disabled) {
+    this.btn.disabled = !!disabled;
+    if (disabled) this.close();
+  }
+  setLoading(isLoading, text) {
+    this.btn.disabled = isLoading;
+    if (isLoading) {
+      this.valueEl.textContent = text || 'Yükleniyor…';
+      this.valueEl.classList.add('is-placeholder');
+      this.close();
+    } else {
+      this._renderButton();
+    }
+  }
+  setSelected(values) {
+    const valid = new Set(this.items.map(i => i.value));
+    this.selected = new Set((values||[]).filter(v => valid.has(v)));
+    this._renderList();
+    this._renderButton();
+  }
+  getSelected() { return [...this.selected]; }
+  toggle() { this.root.classList.contains('open') ? this.close() : this.open(); }
+  open() {
+    if (this.btn.disabled) return;
+    this.root.classList.add('open');
+    this.panel.hidden = false;
+    this.btn.setAttribute('aria-expanded','true');
+    this.searchEl.value = ''; this.filterText = '';
+    this._renderList();
+    setTimeout(() => this.searchEl.focus(), 10);
+  }
+  close() {
+    this.root.classList.remove('open');
+    this.panel.hidden = true;
+    this.btn.setAttribute('aria-expanded','false');
+  }
+  clear() {
+    if (!this.selected.size) return;
+    this.selected.clear();
+    this._renderList(); this._renderButton(); this._fire();
+  }
+  _selectAllVisible() {
+    for (const it of this._visibleItems()) this.selected.add(it.value);
+    this._renderList(); this._renderButton(); this._fire();
+  }
+  _visibleItems() {
+    if (!this.filterText) return this.items;
+    return this.items.filter(i => i.label.toLocaleLowerCase('tr').includes(this.filterText));
+  }
+  _renderList() {
+    const vis = this._visibleItems();
+    if (!vis.length) { this.listEl.innerHTML = `<div class="msel-empty">${escapeHtml(this.emptyText)}</div>`; return; }
+    this.listEl.innerHTML = vis.map((it,i) => `
+      <label class="msel-opt" data-i="${i}">
+        <input type="checkbox" ${this.selected.has(it.value)?'checked':''}>
+        ${it.color ? `<span class="msel-sw" style="background:${it.color}"></span>` : ''}
+        <span class="msel-opt-label">${escapeHtml(it.label)}</span>
+      </label>`).join('');
+    [...this.listEl.children].forEach((row, i) => {
+      const it = vis[i];
+      row.querySelector('input').addEventListener('change', (e) => {
+        if (e.target.checked) this.selected.add(it.value); else this.selected.delete(it.value);
+        this._renderButton(); this._fire();
+      });
+    });
+  }
+  _renderButton() {
+    const n = this.selected.size;
+    if (n === 0) {
+      this.valueEl.textContent = this.placeholder;
+      this.valueEl.classList.add('is-placeholder');
+      return;
+    }
+    this.valueEl.classList.remove('is-placeholder');
+    if (n === 1) {
+      const v = [...this.selected][0];
+      const it = this.items.find(i => i.value === v);
+      this.valueEl.textContent = it ? it.label : v;
+    } else {
+      const itemNoun = this.root.id === 'selMahalle' ? 'mahalle' : 'ilçe';
+      this.valueEl.textContent = `${n} ${itemNoun} seçili`;
+    }
+  }
+  _fire() { if (this.onChange) this.onChange(this.getSelected()); }
+}
+
+/* =========================================================================
+   FİLTRELEME & DURUM — ilçe→mahalle kademeli, ikisi de ÇOKLU seçim.
+   İlçe: harita odak + vurgu + veri filtresi. Mahalle: yalnız yakınlaştırma/
+   vurgu (agregasyonu değiştirmez). Mahalle anahtarları çakışmayı önlemek için
+   "İLÇE::MAHALLE" biçiminde tutulur (aynı mahalle adı farklı ilçede olabilir).
    ========================================================================= */
 const emptyFC = () => ({ type:'FeatureCollection', features:[] });
-const ilceSel = document.getElementById('selIlce');
-const mahSel  = document.getElementById('selMahalle');
+const mahKey = (ilce, mahalle) => `${ilce}::${mahalle}`;
+const mahKeyParts = (key) => { const i = key.indexOf('::'); return [key.slice(0,i), key.slice(i+2)]; };
+
+let ilceSel = null;   // MultiSelect örneği (initFilters'ta kurulur)
+let mahSel  = null;
 
 function initFilters() {
   const adlar = ILCE_DATA.features.map(f => f.properties.AD)
     .sort((a,b) => a.localeCompare(b,'tr'));
-  ilceSel.innerHTML = '<option value="">Tümü</option>' +
-    adlar.map(a => `<option value="${a}">${titleCaseTr(a)}</option>`).join('');
-  ilceSel.disabled = false;
-  mahSel.disabled = true;
-  mahSel.innerHTML = '<option value="">Tümü</option>';
+  const ilceItems = adlar.map(ad => ({ value: ad, label: titleCaseTr(ad), color: ilceHex(ad) }));
 
-  ilceSel.addEventListener('change', () => onIlceChange(ilceSel.value || null));
-  mahSel .addEventListener('change', () => onMahalleChange(mahSel.value || null));
+  ilceSel = new MultiSelect(document.getElementById('selIlce'), {
+    placeholder: 'Tümü', searchPlaceholder: 'İlçe ara…', emptyText: 'İlçe bulunamadı',
+    onChange: (vals) => onIlceChange(vals),
+  });
+  ilceSel.setItems(ilceItems);
+  ilceSel.setDisabled(false);
+
+  mahSel = new MultiSelect(document.getElementById('selMahalle'), {
+    placeholder: 'Tümü', searchPlaceholder: 'Mahalle ara…', emptyText: 'Önce ilçe seçin',
+    onChange: (vals) => onMahalleChange(vals),
+  });
+  mahSel.setDisabled(true);
+
   document.querySelector('.btn-reset').addEventListener('click', resetFilters);
 }
 
@@ -1612,15 +1866,16 @@ function ilceFeature(ad) {
   return ILCE_DATA.features.find(f => f.properties.AD === ad);
 }
 
-async function onIlceChange(ad, opts={}) {
-  STATE.ilce = ad;
-  STATE.mahalle = null;
+let _ilceChangeToken = 0;   // hızlı ardışık onay kutusu tıklamalarında bayat sonucu eler
+async function onIlceChange(list, opts={}) {
+  const token = ++_ilceChangeToken;
+  STATE.ilce = [...list];
+  STATE.mahalle = [];
 
-  if (!ad) {
+  if (STATE.ilce.length === 0) {
     setHighlight(B_ILCE_HL, emptyFC());
     setHighlight(B_MAH_HL, emptyFC());
-    mahSel.disabled = true;
-    mahSel.innerHTML = '<option value="">Tümü</option>';
+    mahSel.setSelected([]); mahSel.setItems([]); mahSel.setDisabled(true);
     refreshMapStyling();   // ilçe koşulu kalktı; dimming'i tazele
     if (!opts.silent) map.fitBounds(ISTANBUL_BOUNDS || boundsOf(ILCE_DATA), { padding:30, duration:600 });
     syncFilterUI(); writeHash();
@@ -1628,24 +1883,28 @@ async function onIlceChange(ad, opts={}) {
     return;
   }
 
-  const feat = ilceFeature(ad);
-  if (feat) {
-    setHighlight(B_ILCE_HL, { type:'FeatureCollection', features:[feat] });
-    setHighlight(B_MAH_HL, emptyFC());
-    if (!opts.silent) {
-      const b = boundsOf({ features:[feat] });
-      if (b) map.fitBounds(b, { padding:40, duration:600 });
-    }
+  const feats = STATE.ilce.map(ilceFeature).filter(Boolean);
+  setHighlight(B_ILCE_HL, { type:'FeatureCollection', features: feats });
+  setHighlight(B_MAH_HL, emptyFC());
+  if (!opts.silent && feats.length) {
+    const b = boundsOf({ features: feats });
+    if (b) map.fitBounds(b, { padding:40, duration:600 });
   }
-  refreshMapStyling();   // seçili ilçe içi tam renk, dışı soluk (dimming)
+  refreshMapStyling();   // seçili ilçe(ler) içi tam renk, dışı soluk (dimming)
   syncFilterUI(); writeHash();   // hash'i hemen yaz (mahalle yüklemesini bekleme)
   document.dispatchEvent(new CustomEvent('dak:filter', { detail:{...STATE} }));
 
-  // Mahalle dropdown'unu doldur (sinir_mahalle lazy yüklenir).
-  mahSel.disabled = true;
-  mahSel.innerHTML = '<option value="">Yükleniyor…</option>';
-  try { await ensureMahalleData(); populateMahalle(ad); }
-  catch(e){ mahSel.innerHTML = '<option value="">Mahalle yüklenemedi</option>'; }
+  // Mahalle listesini doldur (sinir_mahalle lazy yüklenir, seçili ilçelerin birleşimi).
+  mahSel.setSelected([]);
+  mahSel.setLoading(true);
+  try {
+    await ensureMahalleData();
+    if (token !== _ilceChangeToken) return;   // bu arada başka bir ilçe seçimi geldi, sonucu yok say
+    populateMahalle(STATE.ilce);
+  } catch(e) {
+    if (token !== _ilceChangeToken) return;
+    mahSel.setItems([]); mahSel.setLoading(false); mahSel.setDisabled(true);
+  }
 }
 
 // sinir_mahalle (17MB) yalnız ilk ilçe seçiminde bir kez yüklenir.
@@ -1667,37 +1926,57 @@ function mahalleFeaturesOf(ilceAd) {
   if (!MAHALLE_DATA) return [];
   return MAHALLE_DATA.features.filter(f => f.properties._ilce === ilceAd);
 }
-
-function populateMahalle(ilceAd) {
-  const feats = mahalleFeaturesOf(ilceAd)
-    .sort((a,b) => a.properties.AD.localeCompare(b.properties.AD,'tr'));
-  mahSel.innerHTML = '<option value="">Tümü</option>' +
-    feats.map(f => `<option value="${f.properties.AD}">${titleCaseTr(f.properties.AD)}</option>`).join('');
-  mahSel.disabled = feats.length === 0;
+function mahalleFeaturesOfMany(ilceList) {
+  if (!MAHALLE_DATA) return [];
+  const set = new Set(ilceList);
+  return MAHALLE_DATA.features.filter(f => set.has(f.properties._ilce));
 }
 
-function onMahalleChange(ad, opts={}) {
-  STATE.mahalle = ad;
-  if (!ad) {
+function populateMahalle(ilceList) {
+  const multi = ilceList.length > 1;
+  const feats = mahalleFeaturesOfMany(ilceList).slice().sort((a,b) => {
+    if (multi) {
+      const c = (a.properties._ilce||'').localeCompare(b.properties._ilce||'','tr');
+      if (c !== 0) return c;
+    }
+    return a.properties.AD.localeCompare(b.properties.AD,'tr');
+  });
+  const items = feats.map(f => ({
+    value: mahKey(f.properties._ilce, f.properties.AD),
+    // Birden çok ilçe seçiliyken karışıklığı önlemek için ilçe adı da gösterilir.
+    label: multi ? `${titleCaseTr(f.properties.AD)} · ${titleCaseTr(f.properties._ilce)}` : titleCaseTr(f.properties.AD),
+    color: ilceHex(f.properties._ilce),
+  }));
+  mahSel.setItems(items);
+  mahSel.setLoading(false);
+  mahSel.setDisabled(items.length === 0);
+}
+
+function onMahalleChange(list, opts={}) {
+  STATE.mahalle = [...list];
+  if (STATE.mahalle.length === 0) {
     setHighlight(B_MAH_HL, emptyFC());
-    const f = STATE.ilce && ilceFeature(STATE.ilce);
-    if (f && !opts.silent) { const b=boundsOf({features:[f]}); if(b) map.fitBounds(b,{padding:40,duration:500}); }
+    const feats = STATE.ilce.map(ilceFeature).filter(Boolean);
+    if (feats.length && !opts.silent) { const b=boundsOf({features:feats}); if(b) map.fitBounds(b,{padding:40,duration:500}); }
     syncFilterUI(); writeHash();
     return;
   }
-  const feat = mahalleFeaturesOf(STATE.ilce).find(f => f.properties.AD === ad);
-  if (feat) {
+  const feats = STATE.mahalle.map(key => {
+    const [ilce, mah] = mahKeyParts(key);
+    return mahalleFeaturesOf(ilce).find(f => f.properties.AD === mah);
+  }).filter(Boolean);
+  if (feats.length) {
     // Mahalle = yalnız yakınlaştırma + vurgu (şartname kararı).
-    setHighlight(B_MAH_HL, { type:'FeatureCollection', features:[feat] });
-    if (!opts.silent) { const b=boundsOf({features:[feat]}); if(b) map.fitBounds(b,{padding:50,duration:600}); }
+    setHighlight(B_MAH_HL, { type:'FeatureCollection', features: feats });
+    if (!opts.silent) { const b=boundsOf({features:feats}); if(b) map.fitBounds(b,{padding:50,duration:600}); }
   }
   syncFilterUI(); writeHash();
 }
 
 function resetFilters() {
-  STATE.ilce = null; STATE.mahalle = null;
-  ilceSel.value = ''; mahSel.value = '';
-  mahSel.disabled = true; mahSel.innerHTML = '<option value="">Tümü</option>';
+  STATE.ilce = []; STATE.mahalle = [];
+  ilceSel.setSelected([]);
+  mahSel.setSelected([]); mahSel.setItems([]); mahSel.setDisabled(true);
   setHighlight(B_ILCE_HL, emptyFC());
   setHighlight(B_MAH_HL, emptyFC());
   refreshMapStyling();   // dimming'i temizle (yalnız panel koşulu kalır)
@@ -1711,10 +1990,10 @@ function setHighlight(layerId, fc) {
   if (src) src.setData(fc);
 }
 
-// Dropdown değerlerini STATE ile eşitle (hash'ten geri yükleme için).
+// Bileşen seçimini STATE ile eşitle (hash'ten geri yükleme için).
 function syncFilterUI() {
-  if (ilceSel.value !== (STATE.ilce || '')) ilceSel.value = STATE.ilce || '';
-  if (mahSel.value  !== (STATE.mahalle || '')) mahSel.value = STATE.mahalle || '';
+  ilceSel.setSelected(STATE.ilce);
+  mahSel.setSelected(STATE.mahalle);
 }
 
 /* ---- URL hash'ten durumu uygula (ilk yükleme + geri/ileri) ---- */
@@ -1725,8 +2004,12 @@ async function applyHashOnLoad() {
     if (idx >= 0 && PANELS[idx] !== STATE.panel) selectPanel(idx);
   }
   if (h.ilce) {
-    await onIlceChange(h.ilce);
-    if (h.mahalle) onMahalleChange(h.mahalle);
+    const list = h.ilce.split(',').filter(Boolean);
+    await onIlceChange(list);
+    if (h.mahalle) {
+      const mlist = h.mahalle.split(',').filter(Boolean);
+      onMahalleChange(mlist);
+    }
   }
 }
 
@@ -1877,7 +2160,8 @@ function aggregateField(features, field, opt={}) {
     if (opt.override) return altHex(code, activePanel);
     if (opt.dom) return hexOf(opt.dom, code);
     if (field === 'kent_kir') return code === 'Kentsel' ? '#00929F' : '#9AAEB0';
-    return '#5B7E84';                  // ilçe vb. tek marka tonu
+    if (field === 'ilce_adi') return ilceHex(code);    // İBB tabela renk şeması
+    return '#5B7E84';                  // diğer serbest alanlar: tek marka tonu
   };
   return [...m.entries()]
     .map(([code,value]) => ({ code, value, label: labelFor(code), hex: colorFor(code) }))
@@ -2051,14 +2335,16 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
    ========================================================================= */
 (async function start() {
   try {
-    const [domain, iliski, aciklama] = await Promise.all([
+    const [domain, iliski, aciklama, ilceRenk] = await Promise.all([
       fetchJSON(url('domain')),
       fetchJSON(url('iliski')).catch(() => null),        // logolar opsiyonel
       fetchJSON(url('ilce_aciklama')).catch(() => null), // saha gözlem metinleri opsiyonel
+      fetchJSON(url('ilce_renk')).catch(() => null),     // tabela renkleri opsiyonel (yoksa marka tonu)
     ]);
     buildLookups(domain);
     ILISKI = iliski;
     ACIKLAMA = aciklama;
+    buildIlceRenkLookup(ilceRenk);
     renderGroupLogos(activePanel);
     // Header logosu (İBB · İPA · İstanbul Plan 2050).
     document.getElementById('brandMark').innerHTML =
