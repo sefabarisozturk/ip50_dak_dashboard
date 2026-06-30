@@ -129,7 +129,7 @@ button { font-family: inherit; cursor: pointer; }
 [data-theme="light"] .icon-moon { display: none; }
 [data-theme="dark"]  .icon-sun  { display: none; }
 
-/* ===================== MODAL (Metodoloji / Hakkında) ===================== */
+/* ===================== MODAL (Metodoloji/Hakkında) ===================== */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(16,25,28,.45);
@@ -600,7 +600,7 @@ button { font-family: inherit; cursor: pointer; }
         </section>
         <section class="card">
           <div class="card-head">
-            <span class="card-title" id="barTitle">Kentsel / Kırsal Dağılım</span>
+            <span class="card-title" id="barTitle">Kentsel/Kırsal Dağılım</span>
             <span class="card-meta">Alan (ha)</span>
           </div>
           <div class="chart-canvas"><div class="echart" id="barChart"></div></div>
@@ -1781,7 +1781,7 @@ function buildLegend(fc) {
 
 function legendTitleFor(layerKey) {
   const m = { alt:'Alt Kullanım', orta:'Orta Kullanım', ana:'Ana Kullanım',
-             konut:'Konut Detayı', nace:'NACE Faaliyeti', sosyal:'Kamu / Özel' };
+             konut:'Konut Detayı', nace:'NACE Faaliyeti', sosyal:'Kamu/Özel' };
   return m[layerKey] || LAYERS[layerKey].label;
 }
 
@@ -1798,11 +1798,11 @@ const CHART_TOPN = 10;
 
 /* Panel → iki donut alan/etiket tanımları (şartname matrisi). */
 const CHART_CONFIG = {
-  "Genel Bakış":                   { donut:{field:'ana_kullanim',dom:'ana',drill:true}, bar:{field:'kent_kir',title:'Kentsel / Kırsal Dağılım'} },
+  "Genel Bakış":                   { donut:{field:'ana_kullanim',dom:'ana',drill:true}, bar:{field:'kent_kir',title:'Kentsel/Kırsal Dağılım'} },
   "Konut Alanları":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_konut',dom:'detay_konut',title:'Konut Detayı Dağılımı'} },
   "Çalışma Alanları":              { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'nacekodu',dom:'nace',title:'NACE Faaliyeti Dağılımı'} },
-  "Kentsel Açık ve Yeşil Alanlar": { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu / Özel Dağılımı'} },
-  "Sosyal Altyapı":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu / Özel Dağılımı'} },
+  "Kentsel Açık ve Yeşil Alanlar": { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu/Özel Dağılımı'} },
+  "Sosyal Altyapı":                { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'detay_sosyalaltyapi',dom:'detay_sosyal',title:'Kamu/Özel Dağılımı'} },
   "Doğal Nitelikli Alanlar":       { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
   "Ulaşım ve Altyapı":             { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
   "Su Yüzeyleri":                  { donut:{field:'alt_kullanim',dom:'alt',override:true}, bar:{field:'ilce_adi',title:'İlçe Dağılımı'} },
@@ -2078,7 +2078,7 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     buildLegend();
   });
 
-  // ---- Modaller (Metodoloji / Hakkında) ----
+  // ---- Modaller (Metodoloji/Hakkında) ----
   initModals();
 })();
 
