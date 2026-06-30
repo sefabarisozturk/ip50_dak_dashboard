@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "kaynak": "Street sign colors of Istanbul.svg (Wikimedia Commons)",
+    "aciklama": "İstanbul Büyükşehir Belediyesi sokak tabelalarında kullanılan ilçe renk kodları (2007, Aykut Köksal & Bülent Erkmen tasarımı)",
+    "zemin_rengi": {
+      "ad": "İstanbul Kırmızısı (Pantone 1945)",
+      "hex": "#A6163F"
+    }
+  },
+  "ilceler": [
+    { "ilce": "Adalar", "hex": "#7474C1" },
+    { "ilce": "Arnavutköy", "hex": "#C6579A" },
+    { "ilce": "Ataşehir", "hex": "#A05EB5" },
+    { "ilce": "Avcılar", "hex": "#7474C1" },
+    { "ilce": "Bağcılar", "hex": "#5CB8B2" },
+    { "ilce": "Bahçelievler", "hex": "#A05EB5" },
+    { "ilce": "Bakırköy", "hex": "#E35205" },
+    { "ilce": "Başakşehir", "hex": "#D9C756" },
+    { "ilce": "Bayrampaşa", "hex": "#007681" },
+    { "ilce": "Beşiktaş", "hex": "#00A9E0" },
+    { "ilce": "Beykoz", "hex": "#C6579A" },
+    { "ilce": "Beylikdüzü", "hex": "#D25B73" },
+    { "ilce": "Beyoğlu", "hex": "#A05EB5" },
+    { "ilce": "Büyükçekmece", "hex": "#5CB8B2" },
+    { "ilce": "Çatalca", "hex": "#64A70B" },
+    { "ilce": "Çekmeköy", "hex": "#64A70B" },
+    { "ilce": "Esenler", "hex": "#E35205" },
+    { "ilce": "Esenyurt", "hex": "#949300" },
+    { "ilce": "Eyüpsultan", "hex": "#996017" },
+    { "ilce": "Fatih", "hex": "#5CB8B2" },
+    { "ilce": "Gaziosmanpaşa", "hex": "#D25B73" },
+    { "ilce": "Güngören", "hex": "#64A70B" },
+    { "ilce": "Kadıköy", "hex": "#007681" },
+    { "ilce": "Kâğıthane", "hex": "#64A70B" },
+    { "ilce": "Kartal", "hex": "#E35205" },
+    { "ilce": "Küçükçekmece", "hex": "#00A9E0" },
+    { "ilce": "Maltepe", "hex": "#D25B73" },
+    { "ilce": "Pendik", "hex": "#00A9E0" },
+    { "ilce": "Sancaktepe", "hex": "#E35205" },
+    { "ilce": "Sarıyer", "hex": "#7474C1" },
+    { "ilce": "Silivri", "hex": "#007681" },
+    { "ilce": "Sultanbeyli", "hex": "#5CB8B2" },
+    { "ilce": "Sultangazi", "hex": "#00A9E0" },
+    { "ilce": "Şile", "hex": "#996017" },
+    { "ilce": "Şişli", "hex": "#E35205" },
+    { "ilce": "Tuzla", "hex": "#A05EB5" },
+    { "ilce": "Ümraniye", "hex": "#D9C756" },
+    { "ilce": "Üsküdar", "hex": "#996017" },
+    { "ilce": "Zeytinburnu", "hex": "#C6579A" }
+  ]
+}
