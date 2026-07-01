@@ -1023,13 +1023,13 @@ function dimColor() { return root.getAttribute('data-theme')==='dark' ? '#2A3236
 /* Katman tanımları: her biri bir öznitelik alanını domain seviyesine bağlar.
    override:true → alt_kullanim panele özgü renklerle (panel_alt_kullanim). */
 const LAYERS = {
-  alt:     { label:'Alt Kullanım', field:'alt_kullanim',         dom:'alt',           override:true },
-  orta:    { label:'Orta Kullanım',field:'orta_kullanim',        dom:'orta' },
-  ana:     { label:'Ana Kullanım', field:'ana_kullanim',         dom:'ana' },
-  konut:   { label:'Detay',        field:'detay_konut',          dom:'detay_konut' },
-  nace:    { label:'NACE',         field:'nacekodu',             dom:'nace' },
-  ticaret: { label:'Ticaret',      field:'detay_ticaret',        dom:'detay_ticaret' },
-  sosyal:  { label:'Detay',        field:'detay_sosyalaltyapi',  dom:'detay_sosyal' },
+  alt:     { label:'Alt Kullanım',   field:'alt_kullanim',         dom:'alt',           override:true },
+  orta:    { label:'Orta Kullanım',  field:'orta_kullanim',        dom:'orta' },
+  ana:     { label:'Ana Kullanım',   field:'ana_kullanim',         dom:'ana' },
+  konut:   { label:'Konut Detayı',   field:'detay_konut',          dom:'detay_konut' },
+  nace:    { label:'NACE',           field:'nacekodu',             dom:'nace' },
+  ticaret: { label:'Ticaret Detayı', field:'detay_ticaret',        dom:'detay_ticaret' },
+  sosyal:  { label:'Kamu/Özel',      field:'detay_sosyalaltyapi',  dom:'detay_sosyal' },
 };
 
 /* Panel → ana kullanım kategorisi + sunulan katman geçişleri (şartname matrisi).
@@ -1183,8 +1183,8 @@ class FitProvinceControl {
     this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
     const b = document.createElement('button');
     b.type = 'button';
-    b.title = 'İl bütünü görünümü';
-    b.setAttribute('aria-label','İl bütünü görünümü');
+    b.title = 'Genel görünüm';
+    b.setAttribute('aria-label','Genel görünüm');
     // Genel görünüm: sürekli çerçeve + merkez nokta (vizör). Tam ekranın köşe
     // oklarından net ayrışır.
     b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/></svg>`;
@@ -1231,8 +1231,8 @@ class SnapshotControl {
     this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
     const b = document.createElement('button');
     b.type = 'button';
-    b.title = 'Haritayı görüntü olarak kaydet';
-    b.setAttribute('aria-label','Haritayı görüntü olarak kaydet');
+    b.title = 'Görüntü olarak kaydet';
+    b.setAttribute('aria-label','Görüntü olarak kaydet');
     // Kamera ikonu (minimal, set ile tutarlı).
     b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M5 8h2.5l1.2-1.6a1 1 0 0 1 .8-.4h5a1 1 0 0 1 .8.4L16.5 8H19a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3"/></svg>`;
     b.addEventListener('click', () => this._save());
@@ -1437,7 +1437,19 @@ function initMap() {
     zoom: CONFIG.istanbul.zoom,
     attributionControl: true,
     preserveDrawingBuffer: true,   // ekran görüntüsü (toDataURL) için gerekli
-    hash: false
+    hash: false,
+    locale: {
+      'NavigationControl.ZoomIn':            'Yakınlaştır',
+      'NavigationControl.ZoomOut':           'Uzaklaştır',
+      'NavigationControl.ResetBearing':      'Kuzeye hizala',
+      'FullscreenControl.Enter':             'Tam ekran',
+      'FullscreenControl.Exit':              'Tam ekrandan çık',
+      'AttributionControl.ToggleAttribution':'Atıfı aç/kapat',
+      'AttributionControl.MapFeedback':      'Harita geri bildirimi',
+      'ScrollZoomBlocker.CtrlMessage':       'Haritayı yakınlaştırmak için Ctrl + kaydır',
+      'ScrollZoomBlocker.CmdMessage':        'Haritayı yakınlaştırmak için ⌘ + kaydır',
+      'TouchPanBlocker.Message':             'Haritayı taşımak için iki parmak kullanın',
+    }
   });
   // Navigasyon: zoom + pusula (pusulaya tıklama kuzeye hizalar).
   map.addControl(new maplibregl.NavigationControl({ showCompass:true, visualizePitch:true }), 'top-right');
