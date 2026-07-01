@@ -770,7 +770,7 @@ const RAW = "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboar
 // statik GitHub kopyası yerine bu kaynaktan, LOD (zoom'a göre detay seviyesi) ile çekilir.
 const ARCGIS = {
   portal: "https://geo.ipa.istanbul/portal",
-  featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/detayli_ak/FeatureServer/0",
+  featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/Arazi_Kullanim_18062026/FeatureServer/1",
   outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,detay_ticaret,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
   pageSize: 2000,
   oauth: {
@@ -791,13 +791,14 @@ const CONFIG = {
   remote: {
     detayli_ak_json:    `${RAW}/detayli_ak.json`,
     detayli_ak_pmtiles: `${RAW}/detayli_ak.pmtiles`,
-    sinir_ilce:         `${RAW}/sinir_ilce.json`,
-    sinir_mahalle:      `${RAW}/sinir_mahalle.json`,
-    sinir_kent_kir:     `${RAW}/sinir_kent_kir.json`,
-    domain:             `${RAW}/data/domain.json`,
-    iliski:             `${RAW}/data/iliski.json`,
-    ilce_aciklama:      `${RAW}/data/ilce_aciklama.json`,
-    ilce_renk:          `${RAW}/ilce_tabela_renkleri.json`,
+    // Sınır verileri artık ArcGIS FeatureServer'dan GeoJSON olarak çekilir.
+    sinir_ilce:     "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson",
+    sinir_mahalle:  "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=2000",
+    sinir_kent_kir: "https://geo.ipa.istanbul/server/rest/services/Hosted/Kentsel_Kirsal_Alan_Siniri/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson",
+    domain:         `${RAW}/data/domain.json`,
+    iliski:         `${RAW}/data/iliski.json`,
+    ilce_aciklama:  `${RAW}/data/ilce_aciklama.json`,
+    ilce_renk:      `${RAW}/ilce_tabela_renkleri.json`,
   },
   local: {
     detayli_ak_json:    "./detayli_ak.json",
@@ -2418,7 +2419,7 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     renderGroupLogos(activePanel);
     // Header logosu (İBB · İPA · İstanbul Plan 2050).
     document.getElementById('brandMark').innerHTML =
-      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
+      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
     renderReport();
   } catch (e) {
     console.error('Domain yüklenemedi:', e);
