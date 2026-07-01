@@ -764,7 +764,7 @@ const RAW = "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboar
 const ARCGIS = {
   portal: "https://geo.ipa.istanbul/portal",
   featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/detayli_ak/FeatureServer/0",
-  outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
+  outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,detay_ticaret,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
   pageSize: 2000,
   oauth: {
     clientId: "YqPOwINqmmEYEmqG",
@@ -1023,12 +1023,13 @@ function dimColor() { return root.getAttribute('data-theme')==='dark' ? '#2A3236
 /* Katman tanımları: her biri bir öznitelik alanını domain seviyesine bağlar.
    override:true → alt_kullanim panele özgü renklerle (panel_alt_kullanim). */
 const LAYERS = {
-  alt:    { label:'Alt Kullanım', field:'alt_kullanim',         dom:'alt',          override:true },
-  orta:   { label:'Orta Kullanım',field:'orta_kullanim',        dom:'orta' },
-  ana:    { label:'Ana Kullanım', field:'ana_kullanim',         dom:'ana' },
-  konut:  { label:'Detay',        field:'detay_konut',          dom:'detay_konut' },
-  nace:   { label:'NACE',         field:'nacekodu',             dom:'nace' },
-  sosyal: { label:'Detay',        field:'detay_sosyalaltyapi',  dom:'detay_sosyal' },
+  alt:     { label:'Alt Kullanım', field:'alt_kullanim',         dom:'alt',           override:true },
+  orta:    { label:'Orta Kullanım',field:'orta_kullanim',        dom:'orta' },
+  ana:     { label:'Ana Kullanım', field:'ana_kullanim',         dom:'ana' },
+  konut:   { label:'Detay',        field:'detay_konut',          dom:'detay_konut' },
+  nace:    { label:'NACE',         field:'nacekodu',             dom:'nace' },
+  ticaret: { label:'Ticaret',      field:'detay_ticaret',        dom:'detay_ticaret' },
+  sosyal:  { label:'Detay',        field:'detay_sosyalaltyapi',  dom:'detay_sosyal' },
 };
 
 /* Panel → ana kullanım kategorisi + sunulan katman geçişleri (şartname matrisi).
@@ -1036,7 +1037,7 @@ const LAYERS = {
 const PANEL_CONFIG = {
   "Genel Bakış":                   { ana:null,               layers:['alt','orta','ana'] },
   "Konut Alanları":                { ana:'01_Konut',         layers:['alt','konut'] },
-  "Çalışma Alanları":              { ana:'02_Calisma',       layers:['alt','nace'] },
+  "Çalışma Alanları":              { ana:'02_Calisma',       layers:['alt','nace','ticaret'] },
   "Kentsel Açık ve Yeşil Alanlar": { ana:'03_AcikYesil',     layers:['alt','sosyal'] },
   "Sosyal Altyapı":                { ana:'04_SosyalAltyapi', layers:['alt','sosyal'] },
   "Doğal Nitelikli Alanlar":       { ana:'05_Dogal',         layers:['alt'] },
@@ -2088,7 +2089,7 @@ function buildLegend(fc) {
 
 function legendTitleFor(layerKey) {
   const m = { alt:'Alt Kullanım', orta:'Orta Kullanım', ana:'Ana Kullanım',
-             konut:'Konut Detayı', nace:'NACE Faaliyeti', sosyal:'Kamu/Özel' };
+              konut:'Konut Detayı', nace:'NACE Faaliyeti', ticaret:'Ticaret Detayı', sosyal:'Kamu/Özel' };
   return m[layerKey] || LAYERS[layerKey].label;
 }
 
