@@ -791,14 +791,13 @@ const CONFIG = {
   remote: {
     detayli_ak_json:    `${RAW}/detayli_ak.json`,
     detayli_ak_pmtiles: `${RAW}/detayli_ak.pmtiles`,
-    // Sınır verileri artık ArcGIS FeatureServer'dan GeoJSON olarak çekilir.
-    sinir_ilce:     "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson",
-    sinir_mahalle:  "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/1/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=2000",
-    sinir_kent_kir: "https://geo.ipa.istanbul/server/rest/services/Hosted/Kentsel_Kirsal_Alan_Siniri/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson",
-    domain:         `${RAW}/data/domain.json`,
-    iliski:         `${RAW}/data/iliski.json`,
-    ilce_aciklama:  `${RAW}/data/ilce_aciklama.json`,
-    ilce_renk:      `${RAW}/ilce_tabela_renkleri.json`,
+    sinir_ilce:         `${RAW}/sinir_ilce.json`,
+    sinir_mahalle:      `${RAW}/sinir_mahalle.json`,
+    sinir_kent_kir:     `${RAW}/sinir_kent_kir.json`,
+    domain:             `${RAW}/data/domain.json`,
+    iliski:             `${RAW}/data/iliski.json`,
+    ilce_aciklama:      `${RAW}/data/ilce_aciklama.json`,
+    ilce_renk:          `${RAW}/ilce_tabela_renkleri.json`,
   },
   local: {
     detayli_ak_json:    "./detayli_ak.json",
@@ -2488,4 +2487,4 @@ function initModals() {
 }
 </script>
 </body>
-</html>
+</html>   
