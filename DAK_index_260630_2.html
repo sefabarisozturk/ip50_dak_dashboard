@@ -1205,7 +1205,7 @@ class FitProvinceControl {
   onRemove() { this._c.parentNode && this._c.parentNode.removeChild(this._c); }
 }
 
-/* Uydu görüntüsü altlığı aç/kapa — basılı durumda (is-active) Esri World Imagery
+/* Harita/Uydu altlık geçişi — basılı durumda (is-active) Esri World Imagery
    gösterilir, kapalıyken CartoDB plan altlığına döner (syncBasemapTheme ile uyumlu). */
 class SatelliteControl {
   onAdd(m) {
@@ -1214,11 +1214,11 @@ class SatelliteControl {
     this._c.className = 'maplibregl-ctrl maplibregl-ctrl-group dak-ctrl';
     const b = document.createElement('button');
     b.type = 'button';
-    b.title = 'Uydu görüntüsü altlığı';
-    b.setAttribute('aria-label','Uydu görüntüsü altlığı');
+    b.title = 'Harita/Uydu';
+    b.setAttribute('aria-label','Harita/Uydu');
     b.setAttribute('aria-pressed','false');
-    // Katman/uydu ikonu — diğer DAK kontrolleriyle aynı stroke dili.
-    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M12 2 3 7l9 5 9-5-9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg>`;
+    // Katlı harita ikonu — altlık değiştirme için sezgisel piktogram.
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><polygon points="3 7 3 20 8 17 16 20 21 17 21 4 16 7 8 4 3 7"/><line x1="8" y1="4" x2="8" y2="17"/><line x1="16" y1="7" x2="16" y2="20"/></svg>`;
     b.addEventListener('click', () => {
       setSatellite(!satelliteOn);
       b.classList.toggle('is-active', satelliteOn);
@@ -1443,6 +1443,11 @@ function initMap() {
     style: baseStyle(),
     center: CONFIG.istanbul.center,
     zoom: CONFIG.istanbul.zoom,
+    minZoom: CONFIG.istanbul.zoom - 2,   // İstanbul genel görünümünden en fazla 2 zoom dışarı
+    maxBounds: [                          // Gezinme sınırı: İstanbul + çevre tampon
+      [25.2, 39.4],   // SW — Trakya + Ege tamponu
+      [32.2, 42.4],   // NE — Karadeniz kıyısı + Kocaeli tamponu
+    ],
     attributionControl: true,
     preserveDrawingBuffer: true,   // ekran görüntüsü (toDataURL) için gerekli
     hash: false,
