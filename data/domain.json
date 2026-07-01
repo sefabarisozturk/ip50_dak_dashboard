@@ -1122,6 +1122,13 @@
    "ana_code": "04_SosyalAltyapi",
    "label": "Sokak Hayvanları Barınağı Alanı",
    "hex": "#9ACF19"
+  },
+  {
+   "code": 9999,
+   "orta_code": 18,
+   "ana_code": "06_UlasimAltyapi",
+   "label": "Yol",
+   "hex": "#E1E1E1"
   }
  ],
  "nace": [
@@ -2277,7 +2284,14 @@
     "ana_code": "06_UlasimAltyapi",
     "label": "Geri Dönüşüm Tesisi",
     "hex": "#4E342E"
-   }
+   },
+   {
+   "code": 9999,
+   "orta_code": 18,
+   "ana_code": "06_UlasimAltyapi",
+   "label": "Yol",
+   "hex": "#E1E1E1"
+  }
   ],
   "Su Yüzeyleri": [
    {
