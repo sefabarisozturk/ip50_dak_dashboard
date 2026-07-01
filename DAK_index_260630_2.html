@@ -770,7 +770,7 @@ const RAW = "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboar
 // statik GitHub kopyası yerine bu kaynaktan, LOD (zoom'a göre detay seviyesi) ile çekilir.
 const ARCGIS = {
   portal: "https://geo.ipa.istanbul/portal",
-  featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/Arazi_Kullanim_18062026/FeatureServer/1",
+  featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/detayli_ak/FeatureServer/0",
   outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,detay_ticaret,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
   pageSize: 2000,
   oauth: {
@@ -2418,7 +2418,7 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     renderGroupLogos(activePanel);
     // Header logosu (İBB · İPA · İstanbul Plan 2050).
     document.getElementById('brandMark').innerHTML =
-      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
+      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
     renderReport();
   } catch (e) {
     console.error('Domain yüklenemedi:', e);
@@ -2487,4 +2487,4 @@ function initModals() {
 }
 </script>
 </body>
-</html>   
+</html>
