@@ -771,8 +771,6 @@ const RAW = "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboar
 const ARCGIS = {
   portal: "https://geo.ipa.istanbul/portal",
   featureServer: "https://geo.ipa.istanbul/server/rest/services/Hosted/detayli_ak/FeatureServer/0",
-  sinirIlce:    "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/0",
-  sinirMahalle: "https://geo.ipa.istanbul/server/rest/services/Hosted/ilce_mahalle_sinirlari/FeatureServer/1",
   outFields: "ilce_adi,ilce_uavt,ana_kullanim,orta_kullanim,alt_kullanim,detay_konut,detay_ticaret,nacekodu,detay_sosyalaltyapi,kent_kir,SHAPE__Area",
   pageSize: 2000,
   oauth: {
@@ -1426,34 +1424,6 @@ async function loadDakFromArcGIS(where='1=1') {
   return fc;
 }
 
-// Sınır katmanı (ilçe / mahalle) FeatureServer'dan yüklenir.
-// DAK'tan farklı olarak tüm alanlar (*) istenir ve daha az kayıt beklenir.
-async function loadBoundaryFromArcGIS(featureServerUrl) {
-  const tk = getStoredToken();
-  // Önce toplam kayıt sayısını öğren.
-  const countUrl = `${featureServerUrl}/query?where=1%3D1&returnCountOnly=true&f=json${tk ? `&token=${tk}` : ''}`;
-  const cr = await fetch(countUrl);
-  const cj = await cr.json();
-  if (cj.error) throw new Error(cj.error.message || 'ArcGIS sınır sorgu hatası');
-  const total = cj.count || 0;
-
-  // Sayfalı çekim (maxRecordCount sınırına karşı koruma).
-  const PAGE = ARCGIS.pageSize;
-  const allFeatures = [];
-  for (let offset = 0; offset < total; offset += PAGE) {
-    const params = new URLSearchParams({
-      where: '1=1', outFields: '*', returnGeometry: 'true',
-      f: 'geojson', resultOffset: offset, resultRecordCount: PAGE,
-      outSR: 4326
-    });
-    if (tk) params.set('token', tk);
-    const r = await fetch(`${featureServerUrl}/query?${params.toString()}`);
-    const fc = await r.json();
-    if (fc.features) allFeatures.push(...fc.features);
-  }
-  return { type: 'FeatureCollection', features: allFeatures };
-}
-
 
 function initMap() {
   if (typeof maplibregl === 'undefined') {
@@ -1516,7 +1486,7 @@ async function onMapLoad() {
     // Sınır verileri ve detaylı arazi kullanımı paralel çekilir.
     const [dak, ilce, kk] = await Promise.all([
       CONFIG.USE_ARCGIS ? loadDakFromArcGIS() : fetchJSON(url('detayli_ak_json')),
-      CONFIG.USE_ARCGIS ? loadBoundaryFromArcGIS(ARCGIS.sinirIlce) : fetchJSON(url('sinir_ilce')),
+      fetchJSON(url('sinir_ilce')),
       fetchJSON(url('sinir_kent_kir')),
       // mahalle sınırı büyük (17MB) — Modül 4 filtresinde lazy yüklenecek; şimdi atlanır.
     ]);
@@ -2000,7 +1970,7 @@ function ensureMahalleData() {
   if (MAHALLE_DATA) return Promise.resolve();
   if (MAHALLE_LOADING) return MAHALLE_LOADING;
   MAHALLE_LOADING = (async () => {
-    const mah = CONFIG.USE_ARCGIS ? await loadBoundaryFromArcGIS(ARCGIS.sinirMahalle) : await fetchJSON(url('sinir_mahalle'));
+    const mah = await fetchJSON(url('sinir_mahalle'));
     KIMLIK2AD = {};
     for (const f of ILCE_DATA.features) KIMLIK2AD[f.properties.KIMLIKNO] = f.properties.AD;
     // ILCEKN -> KIMLIKNO -> ilçe adı çözümü her mahalleye eklenir.
@@ -2518,3 +2488,4 @@ function initModals() {
 </script>
 </body>
 </html>
+   
