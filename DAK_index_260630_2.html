@@ -8,7 +8,7 @@
 <!-- Inter: brief'te zorunlu tipografi. Yalnızca kullanılan ağırlıklar çekilir. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 
 <!-- MapLibre GL JS — vektör/raster harita motoru (brief: Leaflet yerine MapLibre). -->
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -93,17 +93,24 @@ button { font-family: inherit; cursor: pointer; }
 .brand-mark {
   height: 36px; width: auto; max-width: 220px; flex: none;
   display: grid; place-items: center; overflow: hidden;
+  text-decoration: none; cursor: pointer;
 }
 .brand-mark img { height: 100%; width: auto; max-width: 100%; object-fit: contain; display: block; }
-.brand-text { display: flex; flex-direction: column; min-width: 0; }
+.brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.1; }
 .brand-title {
-  font-weight: 700; font-size: 14px; letter-spacing: -.01em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800; font-size: 14px; letter-spacing: .01em;
+  color: #353535;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .brand-sub {
-  font-weight: 700; font-size: 14px; letter-spacing: -.01em;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700; font-size: 14px; letter-spacing: .01em;
+  color: #353535;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+[data-theme="dark"] .brand-title,
+[data-theme="dark"] .brand-sub { color: #EAEEF0; }
 .header-spacer { flex: 1; }
 .header-actions { display: flex; align-items: center; gap: 4px; }
 .h-btn {
@@ -551,7 +558,7 @@ button { font-family: inherit; cursor: pointer; }
 <!-- ============================ HEADER ============================ -->
 <header class="app-header">
   <div class="brand-lockup">
-    <div class="brand-mark" id="brandMark"></div>
+    <a href="/" class="brand-mark" id="brandMark" aria-label="Ana sayfaya dön"></a>
     <div class="brand-text">
       <span class="brand-title">Arazi Kullanım</span>
       <span class="brand-sub">Veri Tabanı</span>
@@ -1015,6 +1022,7 @@ let MAHALLE_DATA = null;           // sinir_mahalle GeoJSON (lazy yüklenir)
 let MAHALLE_LOADING = null;        // lazy yükleme promise'i (tekrarı önler)
 let KIMLIK2AD = null;              // ilçe KIMLIKNO -> ilçe adı
 const B_ILCE_HL='b-ilce-hl', B_MAH_HL='b-mah-hl';  // seçili ilçe/mahalle vurgu katmanları
+const MAH_DIM='mah-dim';                               // seçilmemiş mahalleler üzerine beyaz örtü
 const FALLBACK = "#C9D1D4";        // eşleşmeyen / kategori dışı nötr gri
 // Dimming: tematik panelde aktif kategori dışı poligonlar soluk gösterilir (bağlam korunur).
 const DIM_OPACITY_ACTIVE = 0.85, DIM_OPACITY_OTHER = 0.25;  // diğerleri %75 transparan
@@ -1503,6 +1511,13 @@ async function onMapLoad() {
     // Seçili ilçe/mahalle vurgu katmanları (başta boş).
     map.addSource(B_ILCE_HL, { type:'geojson', data: emptyFC() });
     map.addSource(B_MAH_HL,  { type:'geojson', data: emptyFC() });
+    map.addSource(MAH_DIM,   { type:'geojson', data: emptyFC() });
+
+    // Seçilmemiş mahalle örtüsü — seçim olduğunda aktif; fill → beyaz %50.
+    // İlçe kontur ve vurgu katmanlarının ALTINDA, dolgunun ÜSTÜNDE.
+    map.addLayer({ id:MAH_DIM, type:'fill', source:MAH_DIM,
+      paint:{ 'fill-color':'#FFFFFF', 'fill-opacity': 0.5 } });
+
     map.addLayer({ id:B_ILCE_HL, type:'line', source:B_ILCE_HL,
       paint:{ 'line-color':'#00929F', 'line-width':2.6 } });
     map.addLayer({ id:B_MAH_HL, type:'line', source:B_MAH_HL,
@@ -1912,6 +1927,7 @@ async function onIlceChange(list, opts={}) {
   if (STATE.ilce.length === 0) {
     setHighlight(B_ILCE_HL, emptyFC());
     setHighlight(B_MAH_HL, emptyFC());
+    setHighlight(MAH_DIM,  emptyFC());
     mahSel.setSelected([]); mahSel.setItems([]); mahSel.setDisabled(true);
     refreshMapStyling();   // ilçe koşulu kalktı; dimming'i tazele
     if (!opts.silent) map.fitBounds(ISTANBUL_BOUNDS || boundsOf(ILCE_DATA), { padding:30, duration:600 });
@@ -1993,20 +2009,31 @@ function onMahalleChange(list, opts={}) {
   STATE.mahalle = [...list];
   if (STATE.mahalle.length === 0) {
     setHighlight(B_MAH_HL, emptyFC());
+    setHighlight(MAH_DIM,  emptyFC());
     const feats = STATE.ilce.map(ilceFeature).filter(Boolean);
     if (feats.length && !opts.silent) { const b=boundsOf({features:feats}); if(b) map.fitBounds(b,{padding:40,duration:500}); }
     syncFilterUI(); writeHash();
     return;
   }
-  const feats = STATE.mahalle.map(key => {
+
+  // Seçili mahalleleri haritada vurgula.
+  const selectedKeys = new Set(STATE.mahalle);
+  const selectedFeats = STATE.mahalle.map(key => {
     const [ilce, mah] = mahKeyParts(key);
     return mahalleFeaturesOf(ilce).find(f => f.properties.AD === mah);
   }).filter(Boolean);
-  if (feats.length) {
-    // Mahalle = yalnız yakınlaştırma + vurgu (şartname kararı).
-    setHighlight(B_MAH_HL, { type:'FeatureCollection', features: feats });
-    if (!opts.silent) { const b=boundsOf({features:feats}); if(b) map.fitBounds(b,{padding:50,duration:600}); }
+
+  if (selectedFeats.length) {
+    setHighlight(B_MAH_HL, { type:'FeatureCollection', features: selectedFeats });
+    if (!opts.silent) { const b=boundsOf({features:selectedFeats}); if(b) map.fitBounds(b,{padding:50,duration:600}); }
   }
+
+  // Seçilmemiş mahalleler için %50 beyaz örtü katmanı.
+  const dimFeats = mahalleFeaturesOfMany(STATE.ilce).filter(f =>
+    !selectedKeys.has(mahKey(f.properties._ilce, f.properties.AD))
+  );
+  setHighlight(MAH_DIM, { type:'FeatureCollection', features: dimFeats });
+
   syncFilterUI(); writeHash();
 }
 
@@ -2016,6 +2043,7 @@ function resetFilters() {
   mahSel.setSelected([]); mahSel.setItems([]); mahSel.setDisabled(true);
   setHighlight(B_ILCE_HL, emptyFC());
   setHighlight(B_MAH_HL, emptyFC());
+  setHighlight(MAH_DIM,  emptyFC());
   refreshMapStyling();   // dimming'i temizle (yalnız panel koşulu kalır)
   map.fitBounds(ISTANBUL_BOUNDS || boundsOf(ILCE_DATA), { padding:30, duration:600 });
   writeHash();
