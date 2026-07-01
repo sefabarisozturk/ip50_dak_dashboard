@@ -278,7 +278,7 @@ button { font-family: inherit; cursor: pointer; }
 .msel.open .msel-caret { transform: rotate(225deg); margin-top: 3px; }
 
 .msel-panel {
-  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
+  position: fixed; z-index: 200;          /* JS sets left/top/bottom/width on open */
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
   box-shadow: 0 12px 32px rgba(16,25,28,.18);
   display: flex; flex-direction: column; max-height: 320px;
@@ -323,13 +323,13 @@ button { font-family: inherit; cursor: pointer; }
   padding: 9px 20px; border-bottom: 1px solid var(--line);
 }
 .panel-head h1 { font-size: 16px; font-weight: 700; letter-spacing: -.02em; }
-.head-text { display: flex; align-items: baseline; gap: 6px; }
+.head-text { display: flex; align-items: baseline; gap: 6px; flex: 1; min-width: 0; }
 .panel-kicker {
   font-size: 10px; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; color: var(--brand);
   font-variant-numeric: tabular-nums;
 }
-.group-logos { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.group-logos { display: flex; align-items: center; gap: 6px; }
 .group-logos .gl-label { font-size: 11px; color: var(--ink-3); margin-right: 4px; font-weight: 500; }
 .logo-chip {
   width: 28px; height: 28px; flex: none; border-radius: 50%;
@@ -363,9 +363,9 @@ button { font-family: inherit; cursor: pointer; }
 .card-title { font-size: 13px; font-weight: 600; }
 .card-meta { font-size: 11px; color: var(--ink-3); font-weight: 500; }
 
-.map-card { min-height: 0; }
-/* MapLibre konteyneri: kartın gövdesini tümüyle kaplar. */
-.map-canvas { flex: 1; min-height: 0; position: relative; border-radius: 0 0 var(--r) var(--r); overflow: hidden; }
+.map-card { min-height: 0; overflow: hidden; }
+/* MapLibre konteyneri: kartın gövdesini tümüyle kaplar. Artık card-head yok, tüm köşeler yuvarlak. */
+.map-canvas { flex: 1; min-height: 0; position: relative; border-radius: var(--r); overflow: hidden; }
 #map { position: absolute; inset: 0; }
 
 /* MapLibre kontrolleri ve popup'ı kurumsal token'lara uydur. */
@@ -611,16 +611,13 @@ button { font-family: inherit; cursor: pointer; }
         <span class="panel-kicker" id="panelKicker">01</span>
         <h1 id="panelTitle">Genel Bakış</h1>
       </div>
+      <div class="layer-switch" role="group" aria-label="Katman"></div>
       <div class="group-logos" id="groupLogos" aria-label="İlgili tematik gruplar" hidden></div>
     </div>
 
     <!-- SOL harita + SAĞ sütun -->
     <div class="work-area">
       <section class="card map-card">
-        <div class="card-head">
-          <span class="card-title">Arazi Kullanım Haritası</span>
-          <div class="layer-switch" role="group" aria-label="Katman"></div>
-        </div>
         <div class="map-canvas">
           <div id="map"></div>
           <div class="legend" id="legend" hidden>
@@ -1765,12 +1762,38 @@ class MultiSelect {
     this.btn.setAttribute('aria-expanded','true');
     this.searchEl.value = ''; this.filterText = '';
     this._renderList();
+    this._positionPanel();
     setTimeout(() => this.searchEl.focus(), 10);
+  }
+  /* position:fixed + bbox — rail'in overflow:hidden'ından bağımsız, yukarı/aşağı otomatik seçim */
+  _positionPanel() {
+    const rect = this.btn.getBoundingClientRect();
+    const maxH = 320;
+    const gap  = 4;
+    const spaceBelow = window.innerHeight - rect.bottom - gap;
+    const spaceAbove = rect.top - gap;
+    const goUp = spaceBelow < maxH && spaceAbove > spaceBelow;
+
+    Object.assign(this.panel.style, {
+      position: 'fixed',
+      left:  rect.left + 'px',
+      width: rect.width + 'px',
+      maxHeight: Math.min(maxH, goUp ? spaceAbove : spaceBelow) + 'px',
+    });
+    if (goUp) {
+      this.panel.style.bottom = (window.innerHeight - rect.top + gap) + 'px';
+      this.panel.style.top    = 'auto';
+    } else {
+      this.panel.style.top    = (rect.bottom + gap) + 'px';
+      this.panel.style.bottom = 'auto';
+    }
   }
   close() {
     this.root.classList.remove('open');
     this.panel.hidden = true;
     this.btn.setAttribute('aria-expanded','false');
+    /* Inline style'ı temizle — bir sonraki open() yeniden hesaplar */
+    this.panel.removeAttribute('style');
   }
   clear() {
     if (!this.selected.size) return;
