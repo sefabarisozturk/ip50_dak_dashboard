@@ -1252,12 +1252,12 @@
   {
    "code": 1,
    "label": "Ofis",
-   "hex": "#D85A8A"
+   "hex": "#4A90E2"
   },
   {
    "code": 2,
    "label": "Finans",
-   "hex": "#A83D6B"
+   "hex": "#1F4E79"
   },
   {
    "code": 3,
@@ -1272,12 +1272,12 @@
   {
    "code": 5,
    "label": "Toptan Ticaret",
-   "hex": "#7E52A8"
+   "hex": "#8E6BB8"
   },
   {
    "code": 6,
    "label": "AVM",
-   "hex": "#C20019"
+   "hex": "#2ECC71"
   },
   {
    "code": 7,
@@ -1292,7 +1292,7 @@
   {
    "code": 9,
    "label": "Toplu İşyeri",
-   "hex": "#6F5C6B"
+   "hex": "#A80018"
   }
  ],
  "detay_konut": [
