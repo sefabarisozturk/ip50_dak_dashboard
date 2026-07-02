@@ -467,6 +467,13 @@ button { font-family: inherit; cursor: pointer; }
 .legend-body { padding: 7px 11px 9px; overflow-y: auto; }
 .legend.collapsed .legend-body { display: none; }   /* kapalı mod: yalnız başlık */
 .legend-item { display: flex; align-items: center; gap: 8px; padding: 2.5px 0; }
+.legend-group {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3);
+  padding: 8px 0 3px; margin-top: 3px;
+  border-top: 1px solid var(--line-2);
+}
+.legend-group:first-child { border-top: none; margin-top: 0; padding-top: 1px; }
 .legend-sw { width: 11px; height: 11px; flex: none; border-radius: 2px; border: 1px solid rgba(0,0,0,.08); }
 .legend-label { font-size: 11.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .legend-empty { font-size: 11.5px; color: var(--ink-3); padding: 4px 0; }
@@ -606,6 +613,10 @@ button { font-family: inherit; cursor: pointer; }
       <div class="filter-field">
         <label class="field-label" id="lblMahalle">Mahalle</label>
         <div class="msel" id="selMahalle" aria-labelledby="lblMahalle"></div>
+      </div>
+      <div class="filter-field">
+        <label class="field-label" id="lblKentKir">Kent / Kır</label>
+        <div class="msel" id="selKentKir" aria-labelledby="lblKentKir"></div>
       </div>
       <button class="btn-reset" type="button">Sıfırla</button>
     </div>
@@ -842,7 +853,7 @@ const PANELS = [
    GLOBAL DURUM — tek doğruluk kaynağı. Harita, grafik (Modül 5), metin
    (Modül 6) bu state'e tepki verir. URL hash ile paylaşılabilir.
    ========================================================================= */
-const STATE = { panel: PANELS[0], ilce: [], mahalle: [] };
+const STATE = { panel: PANELS[0], ilce: [], mahalle: [], kentKir: [] };
 // Eski kod uyumluluğu için activePanel'i STATE.panel'e bağlı tut.
 let activePanel = STATE.panel;
 
@@ -861,6 +872,7 @@ function writeHash() {
   const parts = [`panel=${PANEL_SLUG[STATE.panel]}`];
   if (STATE.ilce.length)    parts.push(`ilce=${STATE.ilce.map(encodeURIComponent).join(',')}`);
   if (STATE.mahalle.length) parts.push(`mahalle=${STATE.mahalle.map(encodeURIComponent).join(',')}`);
+  if (STATE.kentKir.length) parts.push(`kentkir=${STATE.kentKir.map(encodeURIComponent).join(',')}`);
   location.hash = parts.join('&');
   setTimeout(()=>{ _hashWriting=false; }, 0);
 }
@@ -930,7 +942,20 @@ themeBtn.addEventListener('click', () => {
   root.setAttribute('data-theme', next);
   writeTheme(next);
   syncBasemapTheme();   // altlık temayla birlikte değişir
+  applyBrandLogo();     // header logosu temayla birlikte değişir
 });
+
+/* Header logosu — aydınlık/karanlık moda göre iki ayrı SVG. */
+const BRAND_LOGO = {
+  light: "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO_1.svg",
+  dark:  "https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO_2.svg",
+};
+function applyBrandLogo() {
+  const dark = root.getAttribute('data-theme') === 'dark';
+  const mark = document.getElementById('brandMark');
+  if (mark) mark.innerHTML =
+    `<img src="${dark ? BRAND_LOGO.dark : BRAND_LOGO.light}" alt="İBB · İPA · İstanbul Plan 2050">`;
+}
 
 /* =========================================================================
    DOMAIN LOOKUP — Tek merkezi, TİP-GÜVENLİ erişim katmanı.
@@ -1132,10 +1157,12 @@ function activePredicate(panel, includeIlce=true) {
   const ana = PANEL_CONFIG[panel]?.ana || null;
   const ilceList = includeIlce ? STATE.ilce : [];
   const ilceSet = ilceList.length ? new Set(ilceList) : null;
+  const kkSet = STATE.kentKir.length ? new Set(STATE.kentKir) : null;
   return (p) => {
     if (set) { if (!set.has(String(p.alt_kullanim))) return false; }
     else if (ana) { if (p.ana_kullanim !== ana) return false; }
     if (ilceSet && !ilceSet.has(p.ilce_adi)) return false;
+    if (kkSet && !kkSet.has(p.kent_kir)) return false;
     return true;
   };
 }
@@ -1153,6 +1180,8 @@ function activeCondition(panel) {
   }
   if (STATE.ilce.length === 1) conds.push(['==', ['get','ilce_adi'], STATE.ilce[0]]);
   else if (STATE.ilce.length > 1) conds.push(['in', ['get','ilce_adi'], ['literal', STATE.ilce]]);
+  if (STATE.kentKir.length === 1) conds.push(['==', ['get','kent_kir'], STATE.kentKir[0]]);
+  else if (STATE.kentKir.length > 1) conds.push(['in', ['get','kent_kir'], ['literal', STATE.kentKir]]);
   if (conds.length === 0) return null;          // her şey aktif (Genel Bakış, ilçe yok)
   if (conds.length === 1) return conds[0];
   return ['all', ...conds];
@@ -1578,12 +1607,14 @@ function applyPanel(panel) {
   if (!cfg || !map || !map.getLayer(FILL)) return;
 
   // 1) Katman geçiş butonlarını panele göre yeniden kur.
-  currentLayer = cfg.layers[0];
+  //    "Orta Kullanım" her panelde ilk sırada; ardından panelin diğer katmanları.
+  const layers = ['orta', ...cfg.layers.filter(k => k !== 'orta')];
+  currentLayer = layers[0];
   const wrap = document.querySelector('.layer-switch');
-  wrap.innerHTML = cfg.layers.map((k,i) =>
+  wrap.innerHTML = layers.map((k,i) =>
     `<button class="${i===0?'is-active':''}" type="button" data-layer="${k}">${LAYERS[k].label}</button>`
   ).join('');
-  wrap.style.display = cfg.layers.length > 1 ? '' : 'none';  // tek katmanlıysa gizle
+  wrap.style.display = layers.length > 1 ? '' : 'none';  // tek katmanlıysa gizle
   [...wrap.querySelectorAll('button')].forEach(btn => {
     btn.addEventListener('click', () => {
       wrap.querySelectorAll('button').forEach(b=>b.classList.remove('is-active'));
@@ -1891,6 +1922,7 @@ const mahKeyParts = (key) => { const i = key.indexOf('::'); return [key.slice(0,
 
 let ilceSel = null;   // MultiSelect örneği (initFilters'ta kurulur)
 let mahSel  = null;
+let kentKirSel = null;
 
 function initFilters() {
   const adlar = ILCE_DATA.features.map(f => f.properties.AD)
@@ -1909,6 +1941,28 @@ function initFilters() {
     onChange: (vals) => onMahalleChange(vals),
   });
   mahSel.setDisabled(true);
+
+  // Kent / Kır — seçenekler kent_kir alanında FİİLEN bulunan değerlerden üretilir
+  // (yazım farklarına dayanıklı). Renkler alt grafikteki kent/kır tonlarıyla aynı.
+  kentKirSel = new MultiSelect(document.getElementById('selKentKir'), {
+    placeholder: 'Tümü', searchPlaceholder: 'Ara…', emptyText: 'Seçenek yok',
+  });
+  kentKirSel.onChange = (vals) => onKentKirChange(vals);
+  const kkVals = new Set();
+  if (DAK_FC) for (const f of DAK_FC.features) {
+    const v = f.properties.kent_kir;
+    if (v !== undefined && v !== null && String(v).trim() !== '') kkVals.add(String(v));
+  }
+  const kkColor = (v) => v === 'Kentsel' ? '#00929F' : '#9AAEB0';
+  const kkOrder = (v) => v === 'Kentsel' ? 0 : (v.startsWith('Kır') ? 1 : 2);   // Kentsel → Kırsal → diğer
+  const kkItems = [...kkVals]
+    .sort((a,b) => (kkOrder(a)-kkOrder(b)) || a.localeCompare(b,'tr'))
+    .map(v => ({ value:v, label:v, color: kkColor(v) }));
+  kentKirSel.setItems(kkItems.length ? kkItems : [
+    { value:'Kentsel', label:'Kentsel', color:'#00929F' },
+    { value:'Kırsal',  label:'Kırsal',  color:'#9AAEB0' },
+  ]);
+  kentKirSel.setDisabled(false);
 
   document.querySelector('.btn-reset').addEventListener('click', resetFilters);
 }
@@ -2042,10 +2096,21 @@ function onMahalleChange(list, opts={}) {
   syncFilterUI(); writeHash();
 }
 
+/* Kent / Kır filtresi — ilçe ve mahalleden bağımsız; parselleri kent_kir alanına
+   göre süzer. Haritada dimming + grafikler + lejant bu koşula uyar. */
+function onKentKirChange(list) {
+  STATE.kentKir = [...list];
+  refreshMapStyling();   // aktif koşula (kent/kır dahil) göre dimming'i tazele
+  buildLegend();         // lejant yalnız görünen sınıflara indirgenir
+  syncFilterUI(); writeHash();
+  document.dispatchEvent(new CustomEvent('dak:filter', { detail:{...STATE} }));
+}
+
 function resetFilters() {
-  STATE.ilce = []; STATE.mahalle = [];
+  STATE.ilce = []; STATE.mahalle = []; STATE.kentKir = [];
   ilceSel.setSelected([]);
   mahSel.setSelected([]); mahSel.setItems([]); mahSel.setDisabled(true);
+  if (kentKirSel) kentKirSel.setSelected([]);
   setHighlight(B_ILCE_HL, emptyFC());
   setHighlight(B_MAH_HL, emptyFC());
   setHighlight(MAH_DIM,  emptyFC());
@@ -2064,6 +2129,7 @@ function setHighlight(layerId, fc) {
 function syncFilterUI() {
   ilceSel.setSelected(STATE.ilce);
   mahSel.setSelected(STATE.mahalle);
+  if (kentKirSel) kentKirSel.setSelected(STATE.kentKir);
 }
 
 /* ---- URL hash'ten durumu uygula (ilk yükleme + geri/ileri) ---- */
@@ -2080,6 +2146,10 @@ async function applyHashOnLoad() {
       const mlist = h.mahalle.split(',').filter(Boolean);
       onMahalleChange(mlist);
     }
+  }
+  if (h.kentkir) {
+    const kklist = h.kentkir.split(',').filter(Boolean);
+    onKentKirChange(kklist);
   }
 }
 
@@ -2111,22 +2181,59 @@ function buildLegend(fc) {
     const a = Number(p.Shape_Area) || 0;
     areaByCode.set(code, (areaByCode.get(code)||0)+a);
   }
+  // Domain sırası: her koda domain listesindeki konumunu (domain numarasını) ata.
+  const domRank = new Map();
+  domListFor(L.dom).forEach((it, i) => domRank.set(String(it.code), i));
   let items = [...areaByCode.entries()]
     .map(([code,area]) => ({ code, area,
         label: labelOf(L.dom, code),
         hex: L.override ? altHex(code, activePanel) : hexOf(L.dom, code) }))
-    .sort((a,b) => b.area - a.area);
+    .sort((a,b) => {
+      // Lejant, domain numarasına göre sıralanır; domain'de olmayan kodlar sona alana göre.
+      const ra = domRank.has(a.code) ? domRank.get(a.code) : Infinity;
+      const rb = domRank.has(b.code) ? domRank.get(b.code) : Infinity;
+      if (ra !== rb) return ra - rb;
+      return b.area - a.area;
+    });
 
   const total = items.length;
   // İki mod: AÇIK → tüm sınıflar; KAPALI → gövde gizli (yalnız başlık).
   document.getElementById('legendTitle').textContent = legendTitleFor(currentLayer);
   document.getElementById('legendCount').textContent = total ? `${total} sınıf` : 'veri yok';
   const body = document.getElementById('legendBody');
-  body.innerHTML = items.map(it =>
+
+  const itemHTML = (it) =>
     `<div class="legend-item">
        <span class="legend-sw" style="background:${it.hex}"></span>
        <span class="legend-label" title="${it.label}">${it.label}</span>
-     </div>`).join('') || '<div class="legend-empty">Bu panelde gösterilecek sınıf yok.</div>';
+     </div>`;
+
+  if (!items.length) {
+    body.innerHTML = '<div class="legend-empty">Bu panelde gösterilecek sınıf yok.</div>';
+  } else if (L.dom === 'alt') {
+    // Alt kullanım: her sınıfı ait olduğu ORTA kullanım kategorisi başlığı altında topla.
+    // Gruplar orta domain sırasına, grup içi sınıflar (yukarıda) alt domain sırasına göre.
+    const ortaRank = new Map();
+    domListFor('orta').forEach((it, i) => ortaRank.set(String(it.code), i));
+    const groups = new Map();   // orta_code -> { label, rank, items:[] }
+    for (const it of items) {
+      const alt = DOM.alt.get(String(it.code));
+      const ok  = (alt && alt.orta_code != null) ? String(alt.orta_code) : '_';
+      if (!groups.has(ok)) groups.set(ok, {
+        label: ok === '_' ? 'Diğer' : (DOM.orta.get(ok)?.label ?? `Orta Kullanım ${ok}`),
+        rank:  ortaRank.has(ok) ? ortaRank.get(ok) : Infinity,
+        items: [],
+      });
+      groups.get(ok).items.push(it);
+    }
+    body.innerHTML = [...groups.values()]
+      .sort((a,b) => a.rank - b.rank)
+      .map(g => `<div class="legend-group" title="${escapeHtml(g.label)}">${escapeHtml(g.label)}</div>`
+                + g.items.map(itemHTML).join(''))
+      .join('');
+  } else {
+    body.innerHTML = items.map(itemHTML).join('');
+  }
 
   document.getElementById('legend').classList.toggle('collapsed', legendCollapsed);
   document.getElementById('legend').hidden = false;
@@ -2416,9 +2523,8 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     ACIKLAMA = aciklama;
     buildIlceRenkLookup(ilceRenk);
     renderGroupLogos(activePanel);
-    // Header logosu (İBB · İPA · İstanbul Plan 2050).
-    document.getElementById('brandMark').innerHTML =
-      `<img src="https://raw.githubusercontent.com/sefabarisozturk/ip50_dak_dashboard/refs/heads/main/Tematik%20Grup%20Logolar%C4%B1/IBB_IPA_IP50_LOGO.svg" alt="İBB · İPA · İstanbul Plan 2050">`;
+    // Header logosu (İBB · İPA · İstanbul Plan 2050) — aydınlık/karanlık moda göre.
+    applyBrandLogo();
     renderReport();
   } catch (e) {
     console.error('Domain yüklenemedi:', e);
@@ -2488,4 +2594,3 @@ function initModals() {
 </script>
 </body>
 </html>
-   
