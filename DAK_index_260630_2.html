@@ -234,6 +234,27 @@ button { font-family: inherit; cursor: pointer; }
 .panel-tab.is-active .tab-index { color: var(--brand); }
 .tab-name { white-space: nowrap; }
 
+/* Seçili panelin altında açılan orta kullanım çipleri (çoklu seçim). */
+.panel-orta {
+  display: flex; flex-direction: column; gap: 1px;
+  margin: 1px 0 5px 9px; padding-left: 9px;
+  border-left: 2px solid var(--line);
+}
+.orta-chip {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 5px 9px; border: none; background: transparent;
+  color: var(--ink-3); font-size: 12px; font-weight: 500; text-align: left;
+  border-radius: var(--r); transition: background-color .12s, color .12s;
+}
+.orta-chip:hover { background: var(--bg); color: var(--ink-2); }
+.orta-chip.is-on { color: var(--ink); font-weight: 600; }
+.orta-sw {
+  width: 9px; height: 9px; flex: none; border-radius: 2px;
+  border: 1px solid rgba(0,0,0,.12); opacity: .3; transition: opacity .12s;
+}
+.orta-chip.is-on .orta-sw { opacity: 1; }
+.orta-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .filter-field { margin-bottom: 10px; }
 .filter-field:last-of-type { margin-bottom: 12px; }
 .field-label {
@@ -547,6 +568,7 @@ button { font-family: inherit; cursor: pointer; }
   .rail-panels { overflow: visible; }
   .panel-tabs { flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .tab-index { display: none; }
+  .panel-orta { flex-basis: 100%; margin-left: 0; }   /* orta çipleri kendi satırında */
   .content { overflow: visible; }
   .work-area { grid-template-columns: 1fr; overflow: visible; height: auto; }
   .map-card { height: 58vh; }
@@ -602,7 +624,7 @@ button { font-family: inherit; cursor: pointer; }
   <aside class="rail" aria-label="Paneller ve filtre">
     <div class="rail-section rail-panels">
       <div class="rail-label">Paneller</div>
-      <div class="panel-tabs" id="panelTabs" role="tablist"></div>
+      <div class="panel-tabs" id="panelTabs" role="group"></div>
     </div>
     <div class="rail-section rail-filter">
       <div class="rail-label">Filtre</div>
@@ -848,14 +870,22 @@ const PANELS = [
   "Doğal Nitelikli Alanlar", "Ulaşım ve Altyapı",
   "Su Yüzeyleri", "Diğer Alanlar"
 ];
+const OVERVIEW = "Genel Bakış";                        // münhasır "tümü" paneli
+const SPEC_PANELS = PANELS.filter(p => p !== OVERVIEW); // çoklu seçilebilir tematik paneller
 
 /* =========================================================================
    GLOBAL DURUM — tek doğruluk kaynağı. Harita, grafik (Modül 5), metin
    (Modül 6) bu state'e tepki verir. URL hash ile paylaşılabilir.
+   panels: seçili tematik paneller (boş = Genel Bakış / tümü).
+   orta:   seçili orta kullanım kodları (seçili panellerin alt kırılımı).
    ========================================================================= */
-const STATE = { panel: PANELS[0], ilce: [], mahalle: [], kentKir: [] };
-// Eski kod uyumluluğu için activePanel'i STATE.panel'e bağlı tut.
-let activePanel = STATE.panel;
+const STATE = { panels: [], orta: [], ilce: [], mahalle: [], kentKir: [] };
+// activePanel = tek "odak" panel (renk override + grafik + rapor için):
+//   0 panel → Genel Bakış (toplu), 1 panel → o panel, >1 panel → Genel Bakış (toplu).
+let activePanel = OVERVIEW;
+
+const isOverview = () => STATE.panels.length === 0;
+const focusPanel = () => STATE.panels.length === 1 ? STATE.panels[0] : null;
 
 // Panel ↔ kısa slug (URL hash için okunur).
 const PANEL_SLUG = {
@@ -869,7 +899,9 @@ const SLUG_PANEL = Object.fromEntries(Object.entries(PANEL_SLUG).map(([k,v])=>[v
 let _hashWriting = false;
 function writeHash() {
   _hashWriting = true;
-  const parts = [`panel=${PANEL_SLUG[STATE.panel]}`];
+  const parts = [];
+  if (STATE.panels.length) parts.push(`panel=${STATE.panels.map(p=>PANEL_SLUG[p]).join(',')}`);
+  if (STATE.orta.length)    parts.push(`orta=${STATE.orta.join(',')}`);
   if (STATE.ilce.length)    parts.push(`ilce=${STATE.ilce.map(encodeURIComponent).join(',')}`);
   if (STATE.mahalle.length) parts.push(`mahalle=${STATE.mahalle.map(encodeURIComponent).join(',')}`);
   if (STATE.kentKir.length) parts.push(`kentkir=${STATE.kentKir.map(encodeURIComponent).join(',')}`);
@@ -890,43 +922,96 @@ const tabsEl   = document.getElementById('panelTabs');
 const titleEl  = document.getElementById('panelTitle');
 const kickerEl = document.getElementById('panelKicker');
 
-PANELS.forEach((name, i) => {
-  const b = document.createElement('button');
-  b.className = 'panel-tab' + (i === 0 ? ' is-active' : '');
-  b.setAttribute('role', 'tab');
-  b.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
-  b.tabIndex = i === 0 ? 0 : -1;   // roving tabindex: yalnız aktif sekme Tab ile odaklanır
-  b.innerHTML = `<span class="tab-index">${String(i + 1).padStart(2, '0')}</span>
-                 <span class="tab-name">${name}</span>`;
-  b.addEventListener('click', () => selectPanel(i));
-  // Ok tuşlarıyla sekmeler arası gezinme (WAI-ARIA tablist deseni).
-  b.addEventListener('keydown', (e) => {
-    let ni = null;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') ni = (i + 1) % PANELS.length;
-    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ni = (i - 1 + PANELS.length) % PANELS.length;
-    else if (e.key === 'Home') ni = 0;
-    else if (e.key === 'End') ni = PANELS.length - 1;
-    if (ni !== null) { e.preventDefault(); selectPanel(ni); tabsEl.children[ni].focus(); }
+/* ---- Panel listesi (çoklu seçim) + orta kullanım alt-butonları ----
+   "Genel Bakış" münhasır (tümü); seçince diğerleri temizlenir. Özel paneller
+   çoklu seçim toggle'ı; seçili panelin altında o ana kullanımın orta kullanımları
+   yine çoklu seçim çipleri olarak açılır. */
+function panelBtnHTML(name, on, idx) {
+  return `<button class="panel-tab${on?' is-active':''}" type="button" aria-pressed="${on}" data-panel="${escapeHtml(name)}">
+            <span class="tab-index">${idx}</span>
+            <span class="tab-name">${escapeHtml(name)}</span>
+          </button>`;
+}
+function ortaOfAna(ana) {
+  // DOM henüz yoksa boş (ilk parse anında yalnız Genel Bakış aktif → çağrılmaz).
+  return (DOM.raw && DOM.raw.orta_kullanim) ? DOM.raw.orta_kullanim.filter(o => o.ana_code === ana) : [];
+}
+function renderPanelList() {
+  const sel = new Set(STATE.panels);
+  const ortaSel = new Set(STATE.orta.map(String));
+  let html = panelBtnHTML(OVERVIEW, isOverview(), '01');
+  SPEC_PANELS.forEach(p => {
+    const on = sel.has(p);
+    html += panelBtnHTML(p, on, String(PANELS.indexOf(p)+1).padStart(2,'0'));
+    if (on) {
+      const ortas = ortaOfAna(PANEL_CONFIG[p].ana);
+      if (ortas.length) html += `<div class="panel-orta" role="group" aria-label="${escapeHtml(p)} orta kullanımları">`
+        + ortas.map(o => {
+            const oc = String(o.code), chipOn = ortaSel.has(oc);
+            return `<button class="orta-chip${chipOn?' is-on':''}" type="button" aria-pressed="${chipOn}" data-orta="${oc}" title="${escapeHtml(o.label)}">
+                      <span class="orta-sw" style="background:${ortaHex(o.code, p)}"></span>
+                      <span class="orta-name">${escapeHtml(o.label)}</span>
+                    </button>`;
+          }).join('')
+        + `</div>`;
+    }
   });
-  tabsEl.appendChild(b);
-});
-tabsEl.setAttribute('aria-label', 'Tematik paneller');
+  tabsEl.innerHTML = html;
+  tabsEl.querySelectorAll('.panel-tab').forEach(btn =>
+    btn.addEventListener('click', () => togglePanel(btn.dataset.panel)));
+  tabsEl.querySelectorAll('.orta-chip').forEach(btn =>
+    btn.addEventListener('click', () => toggleOrta(btn.dataset.orta)));
+}
+tabsEl.setAttribute('aria-label', 'Kullanım türleri');
 
-function selectPanel(i) {
-  [...tabsEl.children].forEach((b, idx) => {
-    const on = idx === i;
-    b.classList.toggle('is-active', on);
-    b.setAttribute('aria-selected', on ? 'true' : 'false');
-    b.tabIndex = on ? 0 : -1;   // roving tabindex
-  });
-  STATE.panel = PANELS[i];
-  activePanel = STATE.panel;
-  titleEl.textContent  = PANELS[i];
-  kickerEl.textContent = String(i + 1).padStart(2, '0');
-  if (dataLoaded) applyPanel(activePanel);
-  else renderGroupLogos(activePanel);
+function togglePanel(name) {
+  if (name === OVERVIEW) {
+    STATE.panels = []; STATE.orta = [];               // münhasır: her şeyi temizle
+  } else {
+    const i = STATE.panels.indexOf(name);
+    if (i >= 0) {
+      STATE.panels.splice(i, 1);
+      const ana = PANEL_CONFIG[name].ana;             // panel kapanınca ona ait orta seçimleri de kalksın
+      STATE.orta = STATE.orta.filter(c => DOM.orta.get(String(c))?.ana_code !== ana);
+    } else {
+      STATE.panels.push(name);
+    }
+  }
+  onSelectionChange();
+}
+function toggleOrta(code) {
+  code = String(code);
+  const i = STATE.orta.indexOf(code);
+  if (i >= 0) STATE.orta.splice(i, 1); else STATE.orta.push(code);
+  onSelectionChange();
+}
+function onSelectionChange() {
+  activePanel = focusPanel() || OVERVIEW;
+  renderPanelList();
+  updatePanelHead();
+  if (dataLoaded) applyPanel();
+  else renderGroupLogos();
   writeHash();
 }
+function updatePanelHead() {
+  if (isOverview()) { kickerEl.textContent = '01'; titleEl.textContent = OVERVIEW; }
+  else if (STATE.panels.length === 1) {
+    kickerEl.textContent = String(PANELS.indexOf(STATE.panels[0])+1).padStart(2,'0');
+    titleEl.textContent  = STATE.panels[0];
+  } else {
+    kickerEl.textContent = String(STATE.panels.length).padStart(2,'0');
+    titleEl.textContent  = `${STATE.panels.length} kullanım türü`;
+  }
+}
+// Panele göre sunulacak katman anahtarları (Orta hep ilk; varsayılan Alt).
+function currentLayerSet() {
+  const fp = focusPanel();
+  const base = isOverview() ? PANEL_CONFIG[OVERVIEW].layers
+             : fp           ? PANEL_CONFIG[fp].layers
+             : ['alt'];                                 // çoklu panel → yalnız ortak katmanlar
+  return ['orta', ...base.filter(k => k !== 'orta')];
+}
+renderPanelList();   // ilk çizim (parse anında; yalnız Genel Bakış aktif)
 
 /* ---- Tema ---- */
 const root = document.documentElement;
@@ -986,6 +1071,12 @@ function buildLookups(domain) {
   for (const [panel, rows] of Object.entries(domain.panel_alt_kullanim || {})) {
     DOM.panelAlt[panel] = indexByCode(rows);
   }
+  // Panel override (orta): panel adı -> (orta kod string -> hex).
+  // Orta kullanım çipleri, panele özgü renklerle boyanır (panel_orta_kullanim).
+  DOM.panelOrta = {};
+  for (const [panel, rows] of Object.entries(domain.panel_orta_kullanim || {})) {
+    DOM.panelOrta[panel] = indexByCode(rows);
+  }
   DOM.ready = true;
 }
 
@@ -998,6 +1089,13 @@ function altHex(code, panel) {
   const ov = DOM.panelAlt[panel];
   const key = String(code);
   return (ov && ov.has(key) ? ov.get(key).hex : DOM.alt.get(key)?.hex) ?? "#C9D1D4";
+}
+// Panele göre orta_kullanim rengi: panel override (panel_orta_kullanim) varsa o,
+// yoksa kanonik orta rengi. Orta kullanım çipleri bununla boyanır.
+function ortaHex(code, panel) {
+  const ov = DOM.panelOrta[panel];
+  const key = String(code);
+  return (ov && ov.has(key) ? ov.get(key).hex : DOM.orta.get(key)?.hex) ?? "#C9D1D4";
 }
 
 /* =========================================================================
@@ -1138,7 +1236,7 @@ function domListFor(domKey) {
   return map[domKey] || [];
 }
 
-// Birleşik "aktif" koşulu: aktif panel kategorisi VE seçili ilçe (varsa).
+// Birleşik "aktif" koşulu: SEÇİM (paneller + orta) VE seçili ilçe/kent-kır.
 // Eşleşen poligonlar tam renk/opaklık; diğerleri soluk (dimming).
 // Panelin "ilgili" alt kullanım kod seti (panel_alt_kullanim'den; karma sınıflar dahil).
 // Bu set, Konut panelinde Ticaret-Konut/Sanayi-Konut gibi karma sınıfları da kapsar.
@@ -1147,60 +1245,99 @@ function panelAltCodes(panel) {
   const ov = DOM.panelAlt[panel] || DOM.panelAlt[key];
   return ov ? [...ov.keys()] : null;            // string kod dizisi, yoksa null
 }
-// JS tarafı: aktif koşulu mirror eden predicate (lejant + grafik agregasyonu için).
 function panelAltCodeSet(panel) {
   const arr = panelAltCodes(panel);
   return arr ? new Set(arr) : null;
 }
-function activePredicate(panel, includeIlce=true) {
-  const set = panelAltCodeSet(panel);
-  const ana = PANEL_CONFIG[panel]?.ana || null;
-  const ilceList = includeIlce ? STATE.ilce : [];
-  const ilceSet = ilceList.length ? new Set(ilceList) : null;
-  const kkSet = STATE.kentKir.length ? new Set(STATE.kentKir) : null;
+
+/* Her seçili panel için üyelik tanımı:
+   - o panele ait orta seçiliyse → ana + (seçili orta) ile daralt,
+   - değilse → panel_alt_kullanim kod seti (karma sınıflar dahil), yoksa ana. */
+function usePanelParts() {
+  return STATE.panels.map(P => {
+    const ana = PANEL_CONFIG[P]?.ana || null;
+    const ortaForP = STATE.orta.filter(c => (DOM.orta.get(String(c))?.ana_code) === ana);
+    if (ortaForP.length) return { ana, orta: ortaForP, alt: null };
+    return { ana, orta: null, alt: panelAltCodes(P) };   // alt: string[] | null
+  });
+}
+
+// JS tarafı: seçimi (paneller+orta+ilçe+kent-kır) mirror eden predicate.
+function activePredicate(/* panel yok sayılır */) {
+  const overview = isOverview();
+  const parts = usePanelParts().map(part => ({
+    ana: part.ana,
+    ortaSet: part.orta ? new Set(part.orta.map(String)) : null,
+    altSet:  part.alt  ? new Set(part.alt.map(String))  : null,
+  }));
+  const ilceSet = STATE.ilce.length ? new Set(STATE.ilce) : null;
+  const kkSet   = STATE.kentKir.length ? new Set(STATE.kentKir) : null;
   return (p) => {
-    if (set) { if (!set.has(String(p.alt_kullanim))) return false; }
-    else if (ana) { if (p.ana_kullanim !== ana) return false; }
+    if (!overview) {
+      let ok = false;
+      for (const part of parts) {
+        if (part.ortaSet) {
+          if (String(p.ana_kullanim) === part.ana && part.ortaSet.has(String(p.orta_kullanim))) { ok = true; break; }
+        } else if (part.altSet) {
+          if (part.altSet.has(String(p.alt_kullanim))) { ok = true; break; }
+        } else if (part.ana) {
+          if (String(p.ana_kullanim) === part.ana) { ok = true; break; }
+        }
+      }
+      if (!ok) return false;
+    }
     if (ilceSet && !ilceSet.has(p.ilce_adi)) return false;
     if (kkSet && !kkSet.has(p.kent_kir)) return false;
     return true;
   };
 }
 
-function activeCondition(panel) {
+// MapLibre tarafı: seçim + ilçe + kent-kır → filtre ifadesi (dimming için).
+function activeCondition(/* panel yok sayılır */) {
   const conds = [];
-  // Tematik kategori koşulu: panelin alt kod seti varsa ona göre (karma konut dahil),
-  // yoksa ana_kullanim'e göre (örn. Diğer Alanlar). Genel Bakış'ta koşul yok.
-  const altCodes = panelAltCodes(panel);
-  const panelAna = PANEL_CONFIG[panel]?.ana || null;
-  if (altCodes && altCodes.length) {
-    conds.push(['in', ['get','alt_kullanim'], ['literal', altCodes]]);
-  } else if (panelAna) {
-    conds.push(['==', ['get','ana_kullanim'], panelAna]);
+  if (!isOverview()) {
+    const ors = usePanelParts().map(part => {
+      if (part.orta) return ['all',
+        ['==', ['get','ana_kullanim'], part.ana],
+        ['in', ['to-string', ['get','orta_kullanim']], ['literal', part.orta.map(String)]] ];
+      if (part.alt) return ['in', ['to-string', ['get','alt_kullanim']], ['literal', part.alt.map(String)]];
+      return ['==', ['get','ana_kullanim'], part.ana];
+    });
+    if (ors.length === 1) conds.push(ors[0]);
+    else if (ors.length > 1) conds.push(['any', ...ors]);
   }
   if (STATE.ilce.length === 1) conds.push(['==', ['get','ilce_adi'], STATE.ilce[0]]);
   else if (STATE.ilce.length > 1) conds.push(['in', ['get','ilce_adi'], ['literal', STATE.ilce]]);
   if (STATE.kentKir.length === 1) conds.push(['==', ['get','kent_kir'], STATE.kentKir[0]]);
   else if (STATE.kentKir.length > 1) conds.push(['in', ['get','kent_kir'], ['literal', STATE.kentKir]]);
-  if (conds.length === 0) return null;          // her şey aktif (Genel Bakış, ilçe yok)
+  if (conds.length === 0) return null;          // her şey aktif (Genel Bakış, filtre yok)
   if (conds.length === 1) return conds[0];
   return ['all', ...conds];
 }
 
 // Renk ifadesi (data-driven). Aktif koşul dışı poligonlar soluk gri.
-function colorExpression(layerKey, panel) {
+// Renk override'ı tek panel (odak) varsa ona göre; çoklu/genel bakışta kanonik.
+function colorExpression(layerKey /*, panel yok sayılır */) {
   const L = LAYERS[layerKey];
   const expr = ['match', ['get', L.field]];
-  let entries;
+  let entries, fallback = FALLBACK;
   if (L.override) {
-    entries = DOM.raw.alt_kullanim.map(x => [String(x.code), altHex(x.code, panel)]);
+    const fp = focusPanel();
+    entries = DOM.raw.alt_kullanim.map(x => [String(x.code), altHex(x.code, fp)]);
   } else {
-    entries = domListFor(L.dom).map(x => [String(x.code), x.hex]);
+    // Domain'de code:null satırı varsa (ör. Detay Sosyal Altyapı → "Diğer"),
+    // onun rengi bu katmanın fallback'i olur: alanı boş/tanımsız poligonlar
+    // gri yerine o renkle boyanır. null satırı match çiftlerine katılmaz.
+    const list = domListFor(L.dom);
+    const nullRow = list.find(x => x.code === null || x.code === undefined);
+    if (nullRow && nullRow.hex) fallback = nullRow.hex;
+    entries = list.filter(x => x.code !== null && x.code !== undefined)
+                  .map(x => [String(x.code), x.hex]);
   }
   for (const [code, hex] of entries) expr.push(code, hex);
-  expr.push(FALLBACK);
+  expr.push(fallback);
 
-  const cond = activeCondition(panel);
+  const cond = activeCondition();
   if (!cond) return expr;
   return ['case', cond, expr, dimColor()];
 }
@@ -1564,7 +1701,8 @@ async function onMapLoad() {
     buildLegend(dak);
     DAK_FC = dak;              // grafik agregasyonu için yüklenen veriyi sakla
     initCharts();
-    applyPanel(activePanel);   // aktif panele göre katman butonları + dimming + logolar + grafikler
+    renderPanelList();         // DOM (domain) geldi; panel listesi + orta çipleri hazır
+    applyPanel();              // seçime göre katman butonları + dimming + lejant + grafik
     initFilters();             // ilçe dropdown'unu doldur, kademeli filtre kur
 
     dataLoaded = true;
@@ -1601,18 +1739,18 @@ function fitToData(fc) {
   if (b) map.fitBounds(b, { padding: 36, duration: 0 });
 }
 
-/* ---- Panel uygulama: katman butonları + harita filtresi + logolar ---- */
-function applyPanel(panel) {
-  const cfg = PANEL_CONFIG[panel];
-  if (!cfg || !map || !map.getLayer(FILL)) return;
+/* ---- Seçimi uygula: katman butonları + harita filtresi + lejant + grafik + rapor ---- */
+function applyPanel() {
+  if (!map || !map.getLayer(FILL)) return;
+  activePanel = focusPanel() || OVERVIEW;
 
-  // 1) Katman geçiş butonlarını panele göre yeniden kur.
-  //    "Orta Kullanım" her panelde ilk sırada; ardından panelin diğer katmanları.
-  const layers = ['orta', ...cfg.layers.filter(k => k !== 'orta')];
-  currentLayer = layers[0];
+  // 1) Katman geçiş butonları — seçime göre; "Orta Kullanım" ilk sırada, varsayılan Alt.
+  //    Kullanıcının seçtiği katman hâlâ geçerliyse korunur (panel açıp kapatınca sıfırlanmaz).
+  const layers = currentLayerSet();
+  if (!layers.includes(currentLayer)) currentLayer = layers.includes('alt') ? 'alt' : layers[0];
   const wrap = document.querySelector('.layer-switch');
-  wrap.innerHTML = layers.map((k,i) =>
-    `<button class="${i===0?'is-active':''}" type="button" data-layer="${k}">${LAYERS[k].label}</button>`
+  wrap.innerHTML = layers.map(k =>
+    `<button class="${k===currentLayer?'is-active':''}" type="button" data-layer="${k}">${LAYERS[k].label}</button>`
   ).join('');
   wrap.style.display = layers.length > 1 ? '' : 'none';  // tek katmanlıysa gizle
   [...wrap.querySelectorAll('button')].forEach(btn => {
@@ -1625,31 +1763,33 @@ function applyPanel(panel) {
     });
   });
 
-  // 2) Dimming + dış kontur: birleşik aktif koşula göre (panel kategorisi + seçili ilçe).
+  // 2) Dimming + dış kontur: birleşik seçim koşuluna göre.
   refreshMapStyling();
 
-  // 3) Lejant, logolar, grafikler ve saha gözlem raporu (panel değişince drilldown sıfırlanır).
+  // 3) Lejant, logolar, grafikler ve saha gözlem raporu (seçim değişince drilldown sıfırlanır).
   buildLegend();
-  renderGroupLogos(panel);
+  renderGroupLogos();
   resetDonutDrill();
+  updatePanelHead();
   if (typeof updateCharts === 'function') updateCharts();
   renderReport();
 }
 
-/* Harita stilini (renk/opaklık/kontur) mevcut panel + ilçe durumuna göre tazele. */
+/* Harita stilini (renk/opaklık/kontur) mevcut seçime göre tazele. */
 function refreshMapStyling() {
   if (!map || !map.getLayer(FILL)) return;
-  map.setPaintProperty(FILL, 'fill-color', colorExpression(currentLayer, activePanel));
-  map.setPaintProperty(FILL, 'fill-opacity', opacityExpression(activePanel));
+  map.setPaintProperty(FILL, 'fill-color', colorExpression(currentLayer));
+  map.setPaintProperty(FILL, 'fill-opacity', opacityExpression());
 }
 
-/* ---- Aktif panel başlığında tematik grup logoları (iliski.json) ---- */
-function renderGroupLogos(panel) {
+/* ---- Panel başlığında tematik grup logoları (iliski.json) — yalnız tek panel odağında ---- */
+function renderGroupLogos() {
   const box = document.getElementById('groupLogos');
-  if (!ILISKI) { box.hidden = true; return; }
+  const panel = focusPanel();
+  if (!ILISKI || !panel) { box.hidden = true; return; }
   const key = ILISKI_KEY[panel] || panel;
   const files = ILISKI[key] || [];
-  if (!files.length) { box.innerHTML = '<span class="gl-label">Tematik grup yok</span>'; return; }
+  if (!files.length) { box.hidden = true; return; }
   const base = (CONFIG.USE_LOCAL ? './Tematik Grup Logoları/' : `${RAW}/Tematik Grup Logoları/`);
   box.innerHTML =
     '<span class="gl-label">Tematik gruplar</span>' +
@@ -1690,6 +1830,19 @@ function renderReport() {
           <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
         </svg>
         <span>Saha gözlem raporu yalnızca<br><b>tek bir ilçe</b> seçiliyken görüntülenir.</span>
+      </div>`;
+    return;
+  }
+
+  // Rapor tek bir kullanım türüne (panele) özgüdür; 0 veya >1 panelde yönlendirici mesaj.
+  if (STATE.panels.length !== 1) {
+    meta.textContent = isOverview() ? 'Genel Bakış' : `${STATE.panels.length} kullanım türü`;
+    body.className = 'report-body is-empty';
+    body.innerHTML = `<div class="report-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>Saha gözlem raporu yalnızca soldan<br><b>tek bir kullanım türü</b> seçiliyken görüntülenir.</span>
       </div>`;
     return;
   }
@@ -2135,10 +2288,19 @@ function syncFilterUI() {
 /* ---- URL hash'ten durumu uygula (ilk yükleme + geri/ileri) ---- */
 async function applyHashOnLoad() {
   const h = readHash();
-  if (h.panel && SLUG_PANEL[h.panel]) {
-    const idx = PANELS.indexOf(SLUG_PANEL[h.panel]);
-    if (idx >= 0 && PANELS[idx] !== STATE.panel) selectPanel(idx);
-  }
+
+  // Paneller (çoklu slug) + orta kullanım seçimi.
+  const names = (h.panel ? h.panel.split(',') : [])
+    .map(s => SLUG_PANEL[s]).filter(p => p && p !== OVERVIEW);
+  STATE.panels = names;
+  const anaSet = new Set(STATE.panels.map(p => PANEL_CONFIG[p]?.ana));
+  STATE.orta = (h.orta ? h.orta.split(',').filter(Boolean) : [])
+    .filter(c => anaSet.has(DOM.orta.get(String(c))?.ana_code));   // yalnız seçili panellerin ortaları
+  activePanel = focusPanel() || OVERVIEW;
+  renderPanelList();
+  updatePanelHead();
+  if (dataLoaded) applyPanel();
+
   if (h.ilce) {
     const list = h.ilce.split(',').filter(Boolean);
     await onIlceChange(list);
@@ -2522,7 +2684,7 @@ themeObserver.observe(root, { attributes:true, attributeFilter:['data-theme'] })
     ILISKI = iliski;
     ACIKLAMA = aciklama;
     buildIlceRenkLookup(ilceRenk);
-    renderGroupLogos(activePanel);
+    renderGroupLogos();
     // Header logosu (İBB · İPA · İstanbul Plan 2050) — aydınlık/karanlık moda göre.
     applyBrandLogo();
     renderReport();
