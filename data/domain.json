@@ -148,7 +148,7 @@
    "code": 18,
    "ana_code": "06_UlasimAltyapi",
    "label": "Karayolu Ulaşımı",
-   "hex": "#B2B2B2"
+   "hex": "#D69F11"
   },
   {
    "code": 19,
@@ -1354,6 +1354,11 @@
    "code": 2,
    "label": "Özel",
    "hex": "#A81A43"
+  },
+  {
+   "code": null,
+   "label": "Diğer",
+   "hex": "#B5A642"
   }
  ],
  "panel_alt_kullanim": {
@@ -1782,7 +1787,7 @@
     "orta_code": 10,
     "ana_code": "04_SosyalAltyapi",
     "label": "İlkokul-Ortaokul Alanı",
-    "hex": "#4593FF"
+    "hex": "#008FFF"
    },
    {
     "code": 42,
@@ -1803,7 +1808,7 @@
     "orta_code": 10,
     "ana_code": "04_SosyalAltyapi",
     "label": "Üniversite Alanı",
-    "hex": "#102A43"
+    "hex": "#244260"
    },
    {
     "code": 45,
@@ -2286,12 +2291,12 @@
     "hex": "#4E342E"
    },
    {
-   "code": 9999,
-   "orta_code": 18,
-   "ana_code": "06_UlasimAltyapi",
-   "label": "Yol",
-   "hex": "#E1E1E1"
-  }
+    "code": 9999,
+    "orta_code": 18,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Yol",
+    "hex": "#E1E1E1"
+   }
   ],
   "Su Yüzeyleri": [
    {
@@ -2328,6 +2333,216 @@
     "ana_code": "07_Su",
     "label": "Baraj",
     "hex": "#5C6B73"
+   }
+  ],
+  "Diğer Alanlar": [
+   {
+    "code": 119,
+    "orta_code": 28,
+    "ana_code": "08_Diger",
+    "label": "İnşaatı Devam Eden Alan",
+    "hex": "#444444"
+   },
+   {
+    "code": 120,
+    "orta_code": 28,
+    "ana_code": "08_Diger",
+    "label": "Yapılaşmamış Alan",
+    "hex": "#D9E2D4"
+   },
+   {
+    "code": 121,
+    "orta_code": 28,
+    "ana_code": "08_Diger",
+    "label": "Tarihi Surlar",
+    "hex": "#877441"
+   },
+   {
+    "code": 122,
+    "orta_code": 28,
+    "ana_code": "08_Diger",
+    "label": "Süreci ve Kullanımı Belirsiz Alan",
+    "hex": "#D7C29E"
+   }
+  ]
+ },
+ "panel_orta_kullanim": {
+  "Konut Alanları": [
+   {
+    "code": 1,
+    "ana_code": "01_Konut",
+    "label": "Konut Alanları",
+    "hex": "#8C541A"
+   }
+  ],
+  "Çalışma Alanları": [
+   {
+    "code": 2,
+    "ana_code": "02_Calisma",
+    "label": "Hizmet Alanları",
+    "hex": "#E00021"
+   },
+   {
+    "code": 3,
+    "ana_code": "02_Calisma",
+    "label": "Sanayi-Lojistik Alanları",
+    "hex": "#AA66CD"
+   },
+   {
+    "code": 4,
+    "ana_code": "02_Calisma",
+    "label": "Tarım ve Madencilik Alanları",
+    "hex": "#83738C"
+   },
+   {
+    "code": 5,
+    "ana_code": "02_Calisma",
+    "label": "Askeri Alanlar",
+    "hex": "#A8A800"
+   },
+   {
+    "code": 6,
+    "ana_code": "02_Calisma",
+    "label": "Resmi Kurumlar",
+    "hex": "#5A89B9"
+   }
+  ],
+  "Kentsel Açık ve Yeşil Alanlar": [
+   {
+    "code": 7,
+    "ana_code": "03_AcikYesil",
+    "label": "Kentsel Açık Alanlar",
+    "hex": "#F2BB8C"
+   },
+   {
+    "code": 8,
+    "ana_code": "03_AcikYesil",
+    "label": "Aktif Yeşil Alanlar",
+    "hex": "#56DB56"
+   },
+   {
+    "code": 9,
+    "ana_code": "03_AcikYesil",
+    "label": "Pasif Yeşil Alanlar",
+    "hex": "#BADBA2"
+   },
+   {
+    "code": 14,
+    "ana_code": "03_AcikYesil",
+    "label": "Spor Alanları",
+    "hex": "#7AADF4"
+   }
+  ],
+  "Sosyal Altyapı": [
+   {
+    "code": 10,
+    "ana_code": "04_SosyalAltyapi",
+    "label": "Eğitim Tesisi Alanları",
+    "hex": "#1678FF"
+   },
+   {
+    "code": 11,
+    "ana_code": "04_SosyalAltyapi",
+    "label": "İbadet Alanları",
+    "hex": "#006B5D"
+   },
+   {
+    "code": 12,
+    "ana_code": "04_SosyalAltyapi",
+    "label": "Sosyo-Kültürel Tesis Alanları",
+    "hex": "#805AD5"
+   },
+   {
+    "code": 13,
+    "ana_code": "04_SosyalAltyapi",
+    "label": "Sağlık Tesisi Alanları",
+    "hex": "#C53030"
+   }
+  ],
+  "Doğal Nitelikli Alanlar": [
+   {
+    "code": 15,
+    "ana_code": "05_Dogal",
+    "label": "Orman Alanları",
+    "hex": "#1A681A"
+   },
+   {
+    "code": 16,
+    "ana_code": "05_Dogal",
+    "label": "Tarım Alanları",
+    "hex": "#E9FABE"
+   },
+   {
+    "code": 17,
+    "ana_code": "05_Dogal",
+    "label": "Kıyı Alanları",
+    "hex": "#BCAAA4"
+   }
+  ],
+  "Ulaşım ve Altyapı": [
+   {
+    "code": 18,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Karayolu Ulaşımı",
+    "hex": "#FABE25"
+   },
+   {
+    "code": 19,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Denizyolu Ulaşımı",
+    "hex": "#0288D1"
+   },
+   {
+    "code": 20,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Raylı Sistemler",
+    "hex": "#BA68C8"
+   },
+   {
+    "code": 21,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Havayolu Ulaşımı",
+    "hex": "#607D8B"
+   },
+   {
+    "code": 23,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Kıyı Yapıları",
+    "hex": "#00838F"
+   },
+   {
+    "code": 24,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Enerji Altyapısı",
+    "hex": "#FF5722"
+   },
+   {
+    "code": 25,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Su Altyapısı",
+    "hex": "#039BE5"
+   },
+   {
+    "code": 26,
+    "ana_code": "06_UlasimAltyapi",
+    "label": "Atık Yönetimi",
+    "hex": "#8D6E63"
+   }
+  ],
+  "Su Yüzeyleri": [
+   {
+    "code": 27,
+    "ana_code": "07_Su",
+    "label": "Su Yüzeyleri",
+    "hex": "#00D2C4"
+   }
+  ],
+  "Diğer Alanlar": [
+   {
+    "code": 28,
+    "ana_code": "08_Diger",
+    "label": "Diğer Alanlar",
+    "hex": "#8F938C"
    }
   ]
  }
