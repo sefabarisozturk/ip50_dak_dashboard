@@ -921,13 +921,6 @@
       "hex": "#607D8B"
     },
     {
-      "code": 93,
-      "orta_code": 21,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Aktarma Alanı",
-      "hex": "#90A4AE"
-    },
-    {
       "code": 94,
       "orta_code": 23,
       "ana_code": "06_UlasimAltyapi",
@@ -939,13 +932,6 @@
       "orta_code": 23,
       "ana_code": "06_UlasimAltyapi",
       "label": "Tekne Çekek Yeri/Balıkçı Barınağı",
-      "hex": "#E1E1E1"
-    },
-    {
-      "code": 96,
-      "orta_code": 23,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Kıyı Koruma Yapısı ",
       "hex": "#E1E1E1"
     },
     {
@@ -970,31 +956,10 @@
       "hex": "#C29ED7"
     },
     {
-      "code": 100,
-      "orta_code": 24,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Hidro Elektrik Santral Alanı",
-      "hex": "#ABABC8"
-    },
-    {
-      "code": 101,
-      "orta_code": 24,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Jeotermal Tesis Alanı",
-      "hex": "#ABABC8"
-    },
-    {
       "code": 102,
       "orta_code": 24,
       "ana_code": "06_UlasimAltyapi",
       "label": "Akaryakıt Ürünleri Depolama Alanı",
-      "hex": "#C29ED7"
-    },
-    {
-      "code": 103,
-      "orta_code": 24,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Yanıcı Parlayıcı ve Patlayıcı Maddeler Üretim Ve Depo Alanı",
       "hex": "#C29ED7"
     },
     {
@@ -1019,13 +984,6 @@
       "hex": "#B2B2B2"
     },
     {
-      "code": 107,
-      "orta_code": 24,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Regülatör Alanı",
-      "hex": "#C29ED7"
-    },
-    {
       "code": 108,
       "orta_code": 25,
       "ana_code": "06_UlasimAltyapi",
@@ -1040,24 +998,10 @@
       "hex": "#999999"
     },
     {
-      "code": 110,
-      "orta_code": 25,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Su Kaynakları Toplama Yeri (Kaptaj Alanı)",
-      "hex": "#999999"
-    },
-    {
       "code": 111,
       "orta_code": 26,
       "ana_code": "06_UlasimAltyapi",
       "label": "Katı Atık Tesisleri Alanı",
-      "hex": "#858585"
-    },
-    {
-      "code": 112,
-      "orta_code": 26,
-      "ana_code": "06_UlasimAltyapi",
-      "label": "Tehlikeli Atık Tesisleri Alanı",
       "hex": "#858585"
     },
     {
@@ -2139,13 +2083,6 @@
         "hex": "#607D8B"
       },
       {
-        "code": 93,
-        "orta_code": 21,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Aktarma Alanı",
-        "hex": "#90A4AE"
-      },
-      {
         "code": 94,
         "orta_code": 23,
         "ana_code": "06_UlasimAltyapi",
@@ -2158,13 +2095,6 @@
         "ana_code": "06_UlasimAltyapi",
         "label": "Tekne Çekek Yeri/Balıkçı Barınağı",
         "hex": "#00838F"
-      },
-      {
-        "code": 96,
-        "orta_code": 23,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Kıyı Koruma Yapısı ",
-        "hex": "#00ACC1"
       },
       {
         "code": 97,
@@ -2188,32 +2118,11 @@
         "hex": "#FF7043"
       },
       {
-        "code": 100,
-        "orta_code": 24,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Hidro Elektrik Santral Alanı",
-        "hex": "#5A992F"
-      },
-      {
-        "code": 101,
-        "orta_code": 24,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Jeotermal Tesis Alanı",
-        "hex": "#558B2F"
-      },
-      {
         "code": 102,
         "orta_code": 24,
         "ana_code": "06_UlasimAltyapi",
         "label": "Akaryakıt Ürünleri Depolama Alanı",
         "hex": "#D84315"
-      },
-      {
-        "code": 103,
-        "orta_code": 24,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Yanıcı Parlayıcı ve Patlayıcı Maddeler Üretim Ve Depo Alanı",
-        "hex": "#BF360C"
       },
       {
         "code": 104,
@@ -2237,13 +2146,6 @@
         "hex": "#FF5722"
       },
       {
-        "code": 107,
-        "orta_code": 24,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Regülatör Alanı",
-        "hex": "#F4511E"
-      },
-      {
         "code": 108,
         "orta_code": 25,
         "ana_code": "06_UlasimAltyapi",
@@ -2258,25 +2160,11 @@
         "hex": "#039BE5"
       },
       {
-        "code": 110,
-        "orta_code": 25,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Su Kaynakları Toplama Yeri (Kaptaj Alanı)",
-        "hex": "#0091EA"
-      },
-      {
         "code": 111,
         "orta_code": 26,
         "ana_code": "06_UlasimAltyapi",
         "label": "Katı Atık Tesisleri Alanı",
         "hex": "#8D6E63"
-      },
-      {
-        "code": 112,
-        "orta_code": 26,
-        "ana_code": "06_UlasimAltyapi",
-        "label": "Tehlikeli Atık Tesisleri Alanı",
-        "hex": "#5D4037"
       },
       {
         "code": 113,
