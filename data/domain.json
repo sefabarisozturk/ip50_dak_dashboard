@@ -1685,13 +1685,6 @@
         "hex": "#208220"
       },
       {
-        "code": 128,
-        "orta_code": 16,
-        "ana_code": "05_Dogal",
-        "label": "Fidanlık",
-        "hex": "#E9FABE"
-      },
-      {
         "code": 131,
         "orta_code": 8,
         "ana_code": "03_AcikYesil",
